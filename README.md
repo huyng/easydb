@@ -13,6 +13,22 @@ A lightweight HTTP server that exposes SQLite databases as a RESTful API. One se
 - **Safe by default** — all identifiers double-quoted, values parameterised, WAL mode enabled
 - **Single binary** — no runtime dependencies; embeds the admin UI
 
+## Install
+
+**Requirements:** Go 1.22+
+
+```bash
+git clone https://github.com/your-org/go-easydb
+cd go-easydb
+go build -o easydb ./cmd/easydb/
+```
+
+Move the binary somewhere on your `PATH`:
+
+```bash
+mv easydb /usr/local/bin/
+```
+
 ## Quick start
 
 ```bash
