@@ -1,0 +1,1804 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EasyDB Admin</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%23141414'/><ellipse cx='16' cy='11' rx='9' ry='4' fill='%233ecf8e'/><rect x='7' y='11' width='18' height='9' fill='%23141414'/><ellipse cx='16' cy='20' rx='9' ry='4' fill='%232a9d6a'/><rect x='7' y='20' width='18' height='4' fill='%23141414'/><ellipse cx='16' cy='24' rx='9' ry='4' fill='%231e7a50'/></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      fontFamily: {
+        sans: ['Outfit', 'system-ui', 'sans-serif'],
+        mono: ['JetBrains Mono', 'ui-monospace', 'monospace'],
+      },
+      colors: {
+        sb: 'var(--sb)',
+        'sb-text': 'var(--sb-text)',
+        'sb-muted': 'var(--sb-muted)',
+        'sb-hover': 'var(--sb-hover)',
+        'sb-active': 'var(--sb-active)',
+        accent: { DEFAULT: 'var(--accent)', hover: 'var(--accent-hover)' },
+        main: 'var(--main)',
+        surface: 'var(--surface)',
+        edge: 'var(--edge)',
+        fg: 'var(--fg)',
+        muted: 'var(--muted)',
+        danger: { DEFAULT: '#ef4444', bg: 'var(--danger-bg)' },
+        ok: { DEFAULT: '#3ecf8e', bg: 'var(--ok-bg)' },
+        code: { bg: 'var(--code-bg)', text: 'var(--code-text)' },
+      },
+    },
+  },
+};
+</script>
+<style>
+/* ── Dark theme (default) ── */
+:root {
+  --sb: #141414;
+  --sb-text: #e0e0e0;
+  --sb-muted: rgba(255,255,255,0.35);
+  --sb-hover: rgba(255,255,255,0.06);
+  --sb-active: rgba(62,207,142,0.18);
+  --accent: #3ecf8e;
+  --accent-hover: #2eb87a;
+  --main: #1a1a1a;
+  --surface: #222222;
+  --edge: #333333;
+  --fg: #e8e8e8;
+  --muted: #999;
+  --danger-bg: #2e1a1a;
+  --ok-bg: #142e20;
+  --code-bg: #141414;
+  --code-text: #e8e8e8;
+  --row-hover: #2a3830;
+  --btn-hover: #2a2a2a;
+  --cancel-hover: #2e2e2e;
+  --err-border: #5a2020;
+  --ok-border: #1e5a3a;
+  --warn-bg: #3a3520;
+  --delete-hover: #3a1515;
+  --restore-hover: #0f291d;
+  --resize-handle: #2a2a2a;
+  --cm-border: #2a2a2a;
+  --cm-gutter: #1f2233;
+  --cm-empty: rgba(255,255,255,0.25);
+  color-scheme: dark;
+}
+/* ── Light theme ── */
+html.light {
+  --sb: #1a1b26;
+  --sb-text: #c0caf5;
+  --sb-muted: rgba(192,202,245,0.35);
+  --sb-hover: rgba(255,255,255,0.07);
+  --sb-active: rgba(62,207,142,0.22);
+  --accent: #3ecf8e;
+  --accent-hover: #2eb87a;
+  --main: #f6f8fa;
+  --surface: #ffffff;
+  --edge: #d0d7de;
+  --fg: #1f2328;
+  --muted: #636c76;
+  --danger-bg: #fff0ee;
+  --ok-bg: #dafbe1;
+  --code-bg: #1a1b26;
+  --code-text: #c0caf5;
+  --row-hover: #edf2ff;
+  --btn-hover: #f0f2f5;
+  --cancel-hover: #e6e9ed;
+  --err-border: #ffc9c9;
+  --ok-border: #a3d6b3;
+  --warn-bg: #fff3e0;
+  --delete-hover: #fef2f2;
+  --restore-hover: #f0fdf4;
+  --resize-handle: #d0d7de;
+  --cm-border: #d0d7de;
+  --cm-gutter: #1f2233;
+  --cm-empty: rgba(192,202,245,0.35);
+  color-scheme: light;
+}
+
+/* Column resize handle */
+.col-resize-handle {
+  position: absolute; top: 0; right: 0;
+  width: 6px; height: 100%; cursor: col-resize; z-index: 1;
+}
+.col-resize-handle::after {
+  content: ''; position: absolute; top: 20%; right: 1px;
+  width: 2px; height: 60%; background: var(--resize-handle);
+  border-radius: 1px; transition: background .15s;
+}
+.col-resize-handle:hover::after,
+.col-resize-handle.dragging::after { background: var(--accent); }
+/* CodeMirror overrides */
+.CodeMirror { height: auto; min-height: 120px; border-radius: 8px; font-size: 13px; border: 1px solid var(--cm-border); resize: vertical; }
+.CodeMirror-focused { border-color: var(--accent); }
+.cm-s-material-darker .CodeMirror-gutters { border-right: 1px solid var(--cm-gutter); }
+.CodeMirror-empty { color: var(--cm-empty); }
+
+/* Themed utility classes for inline colors that change with mode */
+.t-bg-warn { background: var(--warn-bg); }
+.t-bg-row-hover { background: var(--row-hover); }
+.t-hover-btn:hover { background: var(--btn-hover); }
+.t-hover-cancel:hover { background: var(--cancel-hover); }
+.t-border-err { border-color: var(--err-border); }
+.t-border-ok { border-color: var(--ok-border); }
+.t-hover-delete:hover { background: var(--delete-hover); }
+.t-hover-restore:hover { background: var(--restore-hover); }
+
+/* Thin scrollbars */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--edge); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+
+/* Sidebar active left-border indicator */
+.sb-active-item { position: relative; }
+.sb-active-item::before {
+  content: ''; position: absolute; left: 0; top: 50%;
+  transform: translateY(-50%);
+  width: 3px; height: 55%; background: var(--accent);
+  border-radius: 0 2px 2px 0;
+}
+</style>
+</head>
+<body class="font-sans text-sm bg-main text-fg h-dvh flex flex-col overflow-hidden">
+<script>(function(){var t=localStorage.getItem('edb_theme');if(t==='light')document.documentElement.classList.add('light')})()</script>
+<div id="root" style="display:contents"></div>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/codemirror.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/theme/material-darker.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/addon/hint/show-hint.min.css">
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/codemirror.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/mode/sql/sql.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/addon/hint/show-hint.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/addon/hint/sql-hint.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/addon/edit/matchbrackets.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/addon/edit/closebrackets.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/addon/display/placeholder.min.js"></script>
+
+<script type="text/babel">
+const { useState, useEffect, useRef, useCallback } = React;
+
+// ─────────────────────────────────────────────
+// API helper
+// ─────────────────────────────────────────────
+let _key = '', _url = '';
+function setAuth(k, u) { _key = k; _url = u; }
+
+async function apiFetch(path, { method = 'GET', body, key, url } = {}) {
+  try {
+    const res = await fetch((url || _url) + path, {
+      method,
+      headers: { 'X-API-Key': key || _key, 'Content-Type': 'application/json' },
+      body: body != null ? JSON.stringify(body) : undefined,
+    });
+    const data = await res.json();
+    if (!res.ok) return { _err: data.detail || JSON.stringify(data) };
+    return data;
+  } catch (e) {
+    return { _err: e.message };
+  }
+}
+
+// ─────────────────────────────────────────────
+// DevModeModal — warn when API_KEYS is not set
+// ─────────────────────────────────────────────
+function DevModeModal({ onClose }) {
+  return (
+    <div className="fixed inset-0 bg-black/45 flex items-center justify-center z-[200]">
+      <div className="bg-surface rounded-xl p-6 w-[420px] max-w-[95vw] shadow-[0_8px_40px_rgba(0,0,0,.25)]">
+        <div className="flex items-center gap-2.5 mb-3">
+          <div className="w-9 h-9 rounded-full t-bg-warn flex items-center justify-center text-lg shrink-0">&#9888;&#65039;</div>
+          <h2 className="text-lg">Open-Access Mode</h2>
+        </div>
+        <p className="text-muted text-[13px] mb-1.5">This server has no API key configured (<code className="text-fg bg-main px-1 py-0.5 rounded text-[12px]">API_KEYS</code> is empty).</p>
+        <p className="text-muted text-[13px] mb-4">Anyone with network access can read and modify your databases. Set <code className="text-fg bg-main px-1 py-0.5 rounded text-[12px]">API_KEYS</code> in your <code className="text-fg bg-main px-1 py-0.5 rounded text-[12px]">.env</code> file before exposing this server.</p>
+        <div className="flex gap-2 justify-end">
+          <button className="bg-accent hover:bg-accent-hover text-white px-4 py-[7px] rounded-md font-medium text-[13px] border-none cursor-pointer" onClick={onClose}>
+            I understand
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────
+// RowModal — full row data viewer
+// ─────────────────────────────────────────────
+function RowModal({ columns, row, schema, db, table, onClose, onSaved, onDeleted }) {
+  const modalRef = useRef(null);
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(null);
+  const [saving, setSaving] = useState(false);
+  const [saveErr, setSaveErr] = useState(null);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  // Determine PK column and whether table has a single-column PK
+  const pkCol = schema.find(c => c.pk === 1)?.name || null;
+  const hasPk = !!pkCol;
+  const rowid = row._rowid_;
+
+  // Read-only columns: _rowid_ is always read-only; PK column is read-only in edit mode
+  function isReadOnly(col) {
+    if (col === '_rowid_') return true;
+    if (editing && col === pkCol) return true;
+    return false;
+  }
+
+  useEffect(() => {
+    const handler = e => { if (e.key === 'Escape') onClose(); };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, [onClose]);
+
+  function startEditing() {
+    setDraft({ ...row });
+    setSaveErr(null);
+    setEditing(true);
+  }
+
+  function cancelEditing() {
+    setDraft(null);
+    setSaveErr(null);
+    setEditing(false);
+  }
+
+  async function saveEdits() {
+    if (!draft) return;
+    // Build body with only changed fields
+    const changes = {};
+    for (const col of columns) {
+      if (col === '_rowid_') continue;
+      if (draft[col] !== row[col]) changes[col] = draft[col];
+    }
+    if (!Object.keys(changes).length) { cancelEditing(); return; }
+
+    setSaving(true);
+    setSaveErr(null);
+
+    let path;
+    if (hasPk) {
+      path = `/api/databases/${db}/tables/${encodeURIComponent(table)}/rows/${encodeURIComponent(String(row[pkCol]))}`;
+    } else {
+      path = `/api/databases/${db}/tables/${encodeURIComponent(table)}/rows/rowid/${rowid}`;
+    }
+    const data = await apiFetch(path, { method: 'PUT', body: changes });
+    setSaving(false);
+
+    if (data._err) {
+      setSaveErr(data._err);
+      return;
+    }
+    setEditing(false);
+    setDraft(null);
+    onSaved?.();
+  }
+
+  async function deleteRow() {
+    setDeleting(true);
+    const path = hasPk
+      ? `/api/databases/${db}/tables/${encodeURIComponent(table)}/rows/${encodeURIComponent(String(row[pkCol]))}`
+      : `/api/databases/${db}/tables/${encodeURIComponent(table)}/rows/rowid/${rowid}`;
+    const data = await apiFetch(path, { method: 'DELETE' });
+    setDeleting(false);
+    if (data._err) { setSaveErr(data._err); setConfirmDelete(false); return; }
+    onDeleted?.();
+  }
+
+  function setDraftField(col, value) {
+    setDraft(prev => ({ ...prev, [col]: value }));
+  }
+
+  function startResize(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    const el = modalRef.current;
+    const startX = e.clientX, startY = e.clientY;
+    const startW = el.offsetWidth, startH = el.offsetHeight;
+
+    document.body.style.cursor = 'se-resize';
+    document.body.style.userSelect = 'none';
+
+    function onMove(ev) {
+      el.style.width  = Math.max(320, startW + ev.clientX - startX) + 'px';
+      el.style.height = Math.max(200, startH + ev.clientY - startY) + 'px';
+    }
+    function onUp() {
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+      document.addEventListener('click', e => e.stopPropagation(), { once: true, capture: true });
+    }
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+  }
+
+  const displayRow = editing ? draft : row;
+
+  return (
+    <div className="fixed inset-0 bg-black/45 flex items-center justify-center z-[200]" onClick={onClose}>
+      <div className="bg-surface rounded-xl p-6 w-[560px] h-[480px] min-w-[320px] min-h-[200px] flex flex-col relative" ref={modalRef} onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between mb-4 shrink-0">
+          <h2 className="text-base">Row details</h2>
+          <div className="flex items-center gap-2">
+            {!editing && (
+              confirmDelete
+                ? <>
+                    <span className="text-[13px] text-muted">Delete this row?</span>
+                    <button className="px-2.5 py-1 rounded-md border t-border-err bg-surface text-danger text-[13px] font-medium cursor-pointer t-hover-delete disabled:opacity-55" onClick={deleteRow} disabled={deleting}>{deleting ? 'Deleting…' : 'Confirm'}</button>
+                    <button className="px-2.5 py-1 rounded-md border border-edge bg-surface text-[13px] font-medium cursor-pointer hover:bg-main" onClick={() => setConfirmDelete(false)}>Cancel</button>
+                  </>
+                : <>
+                    <button className="px-2.5 py-1 rounded-md border border-edge bg-surface text-[13px] font-medium cursor-pointer hover:bg-main" onClick={startEditing}>Edit</button>
+                    <button className="px-2.5 py-1 rounded-md border t-border-err bg-surface text-danger text-[13px] font-medium cursor-pointer t-hover-delete" onClick={() => setConfirmDelete(true)}>Delete</button>
+                  </>
+            )}
+            <button className="bg-transparent border-none cursor-pointer text-muted leading-none p-1 hover:text-fg rounded transition-colors" onClick={onClose}>
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1 1l12 12M13 1L1 13" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round"/></svg>
+          </button>
+          </div>
+        </div>
+
+        <div className="overflow-y-auto flex-1">
+          {columns.map(col => {
+            const ro = isReadOnly(col);
+            const v = editing ? draft?.[col] : row[col];
+
+            // Edit mode: show input for editable fields
+            if (editing && !ro) {
+              return (
+                <div key={col} className="grid grid-cols-[160px_1fr] gap-2 py-2 border-b border-edge items-start last:border-b-0">
+                  <div className="text-xs font-semibold text-muted uppercase tracking-[0.04em] pt-[7px] overflow-hidden text-ellipsis whitespace-nowrap" title={col}>{col}</div>
+                  <input type="text" value={v === null ? '' : String(v)}
+                    onChange={e => setDraftField(col, e.target.value === '' ? null : e.target.value)}
+                    placeholder="null"
+                    className="w-full py-[5px] px-2 border border-edge rounded-md text-[13px] font-mono bg-surface outline-none focus:border-accent" />
+                </div>
+              );
+            }
+
+            // View mode (or read-only field in edit mode)
+            let content;
+            if (v === null) {
+              content = <span className="text-muted italic">null</span>;
+            } else {
+              const s = String(v);
+              let parsed;
+              try { parsed = JSON.parse(s); } catch (_) {}
+              if (parsed !== undefined && typeof parsed === 'object' && parsed !== null) {
+                content = <pre>{JSON.stringify(parsed, null, 2)}</pre>;
+              } else {
+                content = s;
+              }
+            }
+            return (
+              <div key={col} className="grid grid-cols-[160px_1fr] gap-2 py-2 border-b border-edge items-start last:border-b-0">
+                <div className={`text-xs font-semibold text-muted uppercase tracking-[0.04em] pt-0.5 overflow-hidden text-ellipsis whitespace-nowrap${col === '_rowid_' ? ' italic' : ''}`} title={col}>
+                  {col === '_rowid_' ? 'rowid (auto)' : col}
+                  {editing && ro && col !== '_rowid_' && <span className="text-[10px] ml-1 normal-case font-normal">PK</span>}
+                </div>
+                <div className={`text-[13px] font-mono break-all whitespace-pre-wrap${editing && ro ? ' bg-main rounded px-2 py-[5px]' : ''}`}>{content}</div>
+              </div>
+            );
+          })}
+        </div>
+
+        {saveErr && (
+          <div className="bg-danger-bg border t-border-err rounded-md px-3.5 py-2 text-danger font-mono text-[12px] mt-2 shrink-0">{saveErr}</div>
+        )}
+
+        {editing && (
+          <div className="flex gap-2 justify-end mt-3 pt-3 border-t border-edge shrink-0">
+            <button className="px-3 py-[6px] rounded-md border border-edge bg-surface text-[13px] font-medium cursor-pointer hover:bg-main" onClick={cancelEditing}>Cancel</button>
+            <button className="px-3 py-[6px] rounded-md bg-accent hover:bg-accent-hover text-white text-[13px] font-medium border-none cursor-pointer disabled:opacity-55" onClick={saveEdits} disabled={saving}>
+              {saving ? 'Saving…' : 'Save'}
+            </button>
+          </div>
+        )}
+
+        <div className="absolute bottom-0 right-0 w-[18px] h-[18px] cursor-se-resize flex items-end justify-end p-[3px] rounded-br-xl group" onMouseDown={startResize}>
+          <svg width="10" height="10" viewBox="0 0 10 10" className="opacity-30 transition-opacity group-hover:opacity-70">
+            <line x1="9" y1="1" x2="1" y2="9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+            <line x1="9" y1="5" x2="5" y2="9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────
+// AddRowModal
+// ─────────────────────────────────────────────
+function AddRowModal({ schema, db, table, onClose, onSaved }) {
+  // Columns the user can fill in: skip the internal rowid and autoincrement PKs
+  const editableCols = schema.filter(c => c.name !== '_rowid_' && !(c.pk === 1 && c.type?.toUpperCase() === 'INTEGER'));
+  const [draft, setDraft] = useState(Object.fromEntries(editableCols.map(c => [c.name, ''])));
+  const [saving, setSaving] = useState(false);
+  const [saveErr, setSaveErr] = useState(null);
+
+  useEffect(() => {
+    const handler = e => { if (e.key === 'Escape') onClose(); };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, [onClose]);
+
+  async function save() {
+    setSaving(true);
+    setSaveErr(null);
+    // Send null for blank fields, otherwise the string value
+    const body = Object.fromEntries(editableCols.map(c => [c.name, draft[c.name] === '' ? null : draft[c.name]]));
+    const data = await apiFetch(`/api/databases/${db}/tables/${encodeURIComponent(table)}/rows`, { method: 'POST', body });
+    setSaving(false);
+    if (data._err) { setSaveErr(data._err); return; }
+    onSaved?.();
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black/45 flex items-center justify-center z-[200]" onClick={onClose}>
+      <div className="bg-surface rounded-xl p-6 w-[560px] max-h-[80vh] flex flex-col" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between mb-4 shrink-0">
+          <h2 className="text-base">Add row</h2>
+          <button className="bg-transparent border-none cursor-pointer text-muted leading-none p-1 hover:text-fg rounded transition-colors" onClick={onClose}>
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1 1l12 12M13 1L1 13" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round"/></svg>
+          </button>
+        </div>
+
+        <div className="overflow-y-auto flex-1">
+          {editableCols.length === 0
+            ? <p className="text-muted text-sm">No editable columns.</p>
+            : editableCols.map(c => (
+              <div key={c.name} className="grid grid-cols-[160px_1fr] gap-2 py-2 border-b border-edge items-start last:border-b-0">
+                <div className="text-xs font-semibold text-muted uppercase tracking-[0.04em] pt-[7px] overflow-hidden text-ellipsis whitespace-nowrap" title={c.name}>{c.name}</div>
+                <input type="text" value={draft[c.name]}
+                  onChange={e => setDraft(prev => ({ ...prev, [c.name]: e.target.value }))}
+                  placeholder="null"
+                  className="w-full py-[5px] px-2 border border-edge rounded-md text-[13px] font-mono bg-surface outline-none focus:border-accent" />
+              </div>
+            ))
+          }
+        </div>
+
+        {saveErr && (
+          <div className="bg-danger-bg border t-border-err rounded-md px-3.5 py-2 text-danger font-mono text-[12px] mt-2 shrink-0">{saveErr}</div>
+        )}
+
+        <div className="flex gap-2 justify-end mt-3 pt-3 border-t border-edge shrink-0">
+          <button className="px-3 py-[6px] rounded-md border border-edge bg-surface text-[13px] font-medium cursor-pointer hover:bg-main" onClick={onClose}>Cancel</button>
+          <button className="px-3 py-[6px] rounded-md bg-accent hover:bg-accent-hover text-white text-[13px] font-medium border-none cursor-pointer disabled:opacity-55" onClick={save} disabled={saving}>
+            {saving ? 'Saving…' : 'Add row'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────
+// DataTable — resizable columns
+// ─────────────────────────────────────────────
+function DataTable({ columns, rows, onSort, sortBy, sortDir, maxHeight, schema, db, table, onRowSaved }) {
+  const tableRef = useRef(null);
+  const [widths, setWidths] = useState(null);
+  const widthsRef = useRef(null);
+  const [selectedRow, setSelectedRow] = useState(null);
+
+  const colKey = columns.join('\x00');
+  useEffect(() => {
+    setWidths(null);
+    widthsRef.current = null;
+  }, [colKey]);
+
+  function startResize(colIndex, e) {
+    e.stopPropagation();
+    e.preventDefault();
+    const handle = e.currentTarget;
+    handle.classList.add('dragging');
+    const table = tableRef.current;
+
+    if (!widthsRef.current) {
+      const ths = Array.from(table.querySelectorAll('thead th'));
+      const measured = ths.map(th => th.getBoundingClientRect().width);
+      widthsRef.current = [...measured];
+      setWidths([...measured]);
+    }
+
+    const startX = e.clientX;
+    const startW = widthsRef.current[colIndex];
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+
+    function onMove(ev) {
+      const newW = Math.max(40, startW + ev.clientX - startX);
+      widthsRef.current[colIndex] = newW;
+      const col = table.querySelectorAll('colgroup col')[colIndex];
+      if (col) col.style.width = newW + 'px';
+    }
+
+    function onUp() {
+      handle.classList.remove('dragging');
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+      if (widthsRef.current) setWidths([...widthsRef.current]);
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+    }
+
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+  }
+
+  const tableStyle = widths ? { tableLayout: 'fixed' } : {};
+  const lastCol = widths ? widths.length - 1 : -1;
+
+  return (
+    <div className="border border-edge rounded-lg overflow-auto bg-surface" style={maxHeight ? { maxHeight, overflow: 'auto' } : {}}>
+      <table ref={tableRef} className="border-collapse text-[13px] w-full" style={tableStyle}>
+        {widths && (
+          <colgroup>
+            {widths.map((w, i) => (
+              <col key={i} style={i < lastCol ? { width: w + 'px' } : {}} />
+            ))}
+          </colgroup>
+        )}
+        <thead>
+          <tr>
+            {columns.map((col, i) => {
+              const isRowid = col === '_rowid_';
+              return (
+                <th key={col}
+                  className={`relative px-3 py-[9px] bg-main text-left font-semibold border-b border-edge whitespace-nowrap select-none overflow-hidden ${isRowid ? 'text-muted italic cursor-default' : 'text-muted cursor-pointer t-hover-btn'}`}
+                  onClick={() => !isRowid && onSort?.(col)}>
+                  {isRowid ? 'rowid' : col}
+                  {!isRowid && sortBy === col && (
+                    <svg width="8" height="8" viewBox="0 0 8 8" fill="currentColor" className="inline ml-1 opacity-70">
+                      {sortDir === 'ASC'
+                        ? <path d="M4 1l3 5H1z"/>
+                        : <path d="M4 7L1 2h6z"/>
+                      }
+                    </svg>
+                  )}
+                  {i < columns.length - 1 && (
+                    <div
+                      className="col-resize-handle"
+                      onMouseDown={e => startResize(i, e)}
+                      onClick={e => e.stopPropagation()}
+                    />
+                  )}
+                </th>
+              );
+            })}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row, ri) => (
+            <tr key={ri} onClick={() => setSelectedRow(row)} className="cursor-pointer group">
+              {columns.map(col => {
+                const v = row[col];
+                const isRowid = col === '_rowid_';
+                return v === null
+                  ? <td key={col} className={`px-3 py-[7px] border-b border-edge overflow-hidden text-ellipsis whitespace-nowrap group-hover:t-bg-row-hover ${isRowid ? 'text-muted italic' : ''}`}><span className="text-muted italic">null</span></td>
+                  : <td key={col} className={`px-3 py-[7px] border-b border-edge overflow-hidden text-ellipsis whitespace-nowrap group-hover:t-bg-row-hover ${isRowid ? 'text-muted italic' : ''}`} title={String(v)}>{String(v)}</td>;
+              })}
+            </tr>
+          ))}
+          {!rows.length && (
+            <tr>
+              <td colSpan={columns.length} className="text-center text-muted py-5">
+                No rows
+              </td>
+            </tr>
+          )}
+        </tbody>
+      </table>
+      {selectedRow && (
+        <RowModal columns={columns} row={selectedRow} schema={schema || []} db={db} table={table}
+          onClose={() => setSelectedRow(null)}
+          onSaved={() => { setSelectedRow(null); onRowSaved?.(); }}
+          onDeleted={() => { setSelectedRow(null); onRowSaved?.(); }} />
+      )}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────
+// InsecureModal — first-visit HTTPS warning
+// ─────────────────────────────────────────────
+const INSECURE_ACK = 'edb_insecure_ack';
+const DEV_ACK = 'edb_dev_ack';
+function isInsecure() {
+  const p = window.location.protocol;
+  return p !== 'https:' && p !== 'file:' && !['localhost','127.0.0.1'].includes(window.location.hostname);
+}
+
+function InsecureModal({ onClose }) {
+  return (
+    <div className="fixed inset-0 bg-black/45 flex items-center justify-center z-[200]">
+      <div className="bg-surface rounded-xl p-6 w-[420px] max-w-[95vw] shadow-[0_8px_40px_rgba(0,0,0,.25)]">
+        <div className="flex items-center gap-2.5 mb-3">
+          <div className="w-9 h-9 rounded-full t-bg-warn flex items-center justify-center text-lg shrink-0">&#9888;&#65039;</div>
+          <h2 className="text-lg">Insecure Connection</h2>
+        </div>
+        <p className="text-muted text-[13px] mb-1.5">You are accessing EasyDB Admin over an unencrypted HTTP connection.</p>
+        <p className="text-muted text-[13px] mb-4">Your API key and all database data are transmitted in plain text. Use HTTPS in production.</p>
+        <div className="flex gap-2 justify-end">
+          <button className="bg-accent hover:bg-accent-hover text-white px-4 py-[7px] rounded-md font-medium text-[13px] border-none cursor-pointer" onClick={onClose}>
+            I understand
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────
+// AuthModal
+// ─────────────────────────────────────────────
+function AuthModal({ initialKey, initialUrl, onConnect }) {
+  const [key, setKey] = useState(initialKey);
+  const [url, setUrl] = useState(initialUrl);
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  async function handleConnect() {
+    const k = key.trim(), u = url.trim().replace(/\/$/, '');
+    if (!k || !u) { setError('Server URL and API key are required.'); return; }
+    setError(''); setLoading(true);
+    const err = await onConnect(k, u);
+    setLoading(false);
+    if (err) setError(err);
+  }
+
+  const onKey = e => { if (e.key === 'Enter') handleConnect(); };
+
+  return (
+    <div className="fixed inset-0 bg-black/45 flex items-center justify-center z-[200]">
+      <div className="bg-surface rounded-xl p-6 w-[420px] max-w-[95vw] shadow-[0_8px_40px_rgba(0,0,0,.25)]">
+        <h2 className="text-lg mb-1.5">EasyDB Admin</h2>
+        <p className="text-muted text-[13px] mb-[18px]">Enter your API key to connect to the server.</p>
+        <div className="mb-3">
+          <label className="block text-xs font-semibold mb-1 text-muted uppercase tracking-[0.04em]">Server URL</label>
+          <input type="text" value={url} onChange={e => setUrl(e.target.value)}
+            onKeyDown={onKey} placeholder="http://localhost:8000"
+            className="w-full py-2 px-[11px] border border-edge rounded-md text-sm outline-none bg-surface focus:border-accent" />
+        </div>
+        <div className="mb-3">
+          <label className="block text-xs font-semibold mb-1 text-muted uppercase tracking-[0.04em]">API Key</label>
+          <input type="password" value={key} onChange={e => setKey(e.target.value)}
+            onKeyDown={onKey} placeholder="your-api-key" autoFocus
+            className="w-full py-2 px-[11px] border border-edge rounded-md text-sm outline-none bg-surface focus:border-accent" />
+        </div>
+        {error && <div className="bg-danger-bg border t-border-err rounded-md px-3.5 py-2.5 text-danger font-mono text-[13px] mb-3">{error}</div>}
+        <div className="flex gap-2 justify-end mt-[18px]">
+          <button className="bg-accent hover:bg-accent-hover text-white px-4 py-[7px] rounded-md font-medium text-[13px] border-none cursor-pointer disabled:opacity-55 disabled:cursor-default" onClick={handleConnect} disabled={loading}>
+            {loading ? 'Connecting…' : 'Connect'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────
+// AddDbModal
+// ─────────────────────────────────────────────
+function AddDbModal({ onRegister, onUpload, onImportUrl, onClose }) {
+  const [mode, setMode] = useState('register');
+  const [name, setName] = useState('');
+  const [path, setPath] = useState('');
+  const [file, setFile] = useState(null);
+  const [url, setUrl] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  async function handleRegister() {
+    if (!name.trim()) { setError('Name is required.'); return; }
+    setError(''); setLoading(true);
+    const err = await onRegister(name.trim(), path.trim());
+    setLoading(false);
+    if (err) setError(err);
+  }
+
+  async function handleUpload() {
+    if (!name.trim()) { setError('Name is required.'); return; }
+    if (!file) { setError('Please select a file.'); return; }
+    setError(''); setLoading(true);
+    const err = await onUpload(name.trim(), file);
+    setLoading(false);
+    if (err) setError(err);
+  }
+
+  async function handleImport() {
+    if (!name.trim()) { setError('Name is required.'); return; }
+    if (!url.trim()) { setError('URL is required.'); return; }
+    setError(''); setLoading(true);
+    const err = await onImportUrl(name.trim(), url.trim());
+    setLoading(false);
+    if (err) setError(err);
+  }
+
+  const tabs = [
+    { key: 'register', label: 'Register' },
+    { key: 'upload', label: 'Upload' },
+    { key: 'url', label: 'From URL' },
+  ];
+
+  const action = mode === 'register' ? handleRegister : mode === 'upload' ? handleUpload : handleImport;
+  const actionLabel = mode === 'register' ? (loading ? 'Registering…' : 'Register') : mode === 'upload' ? (loading ? 'Uploading…' : 'Upload') : (loading ? 'Importing…' : 'Import');
+
+  return (
+    <div className="fixed inset-0 bg-black/45 flex items-center justify-center z-[200]">
+      <div className="bg-surface rounded-xl p-6 w-[420px] max-w-[95vw] shadow-[0_8px_40px_rgba(0,0,0,.25)]">
+        <h2 className="text-lg mb-1.5">Add Database</h2>
+        <div className="flex border-b border-edge -mx-6 px-6 -mt-1 mb-4">
+          {tabs.map(t => (
+            <div key={t.key} className={`px-3 py-[9px] text-[13px] font-medium cursor-pointer border-b-2 -mb-px ${mode === t.key ? 'text-accent border-accent' : 'text-muted border-transparent hover:text-fg'}`} onClick={() => { setMode(t.key); setError(''); }}>{t.label}</div>
+          ))}
+        </div>
+
+        <div className="mb-3">
+          <label className="block text-xs font-semibold mb-1 text-muted uppercase tracking-[0.04em]">Name <span className="font-normal normal-case">(letters, numbers, - _)</span></label>
+          <input type="text" value={name} onChange={e => setName(e.target.value)}
+            placeholder="my_database" autoFocus
+            className="w-full py-2 px-[11px] border border-edge rounded-md text-sm outline-none bg-surface focus:border-accent" />
+        </div>
+
+        {mode === 'register' && (
+          <div className="mb-3">
+            <label className="block text-xs font-semibold mb-1 text-muted uppercase tracking-[0.04em]">File Path <span className="font-normal normal-case">(optional — defaults to data/&#123;name&#125;.db)</span></label>
+            <input type="text" value={path} onChange={e => setPath(e.target.value)}
+              placeholder="/absolute/path/to/file.db"
+              className="w-full py-2 px-[11px] border border-edge rounded-md text-sm outline-none bg-surface focus:border-accent" />
+          </div>
+        )}
+
+        {mode === 'upload' && (
+          <div className="mb-3">
+            <label className="block text-xs font-semibold mb-1 text-muted uppercase tracking-[0.04em]">SQLite File</label>
+            <input type="file" accept=".db,.sqlite,.sqlite3" onChange={e => setFile(e.target.files[0] || null)}
+              className="w-full py-2 text-sm file:mr-2 file:py-1.5 file:px-3 file:rounded-md file:border file:border-edge file:bg-main file:text-fg file:text-[13px] file:cursor-pointer" />
+            {file && <div className="text-[12px] text-muted mt-1">{file.name} ({(file.size / 1024).toFixed(1)} KB)</div>}
+          </div>
+        )}
+
+        {mode === 'url' && (
+          <div className="mb-3">
+            <label className="block text-xs font-semibold mb-1 text-muted uppercase tracking-[0.04em]">URL</label>
+            <input type="url" value={url} onChange={e => setUrl(e.target.value)}
+              placeholder="https://example.com/database.db"
+              className="w-full py-2 px-[11px] border border-edge rounded-md text-sm outline-none bg-surface focus:border-accent" />
+          </div>
+        )}
+
+        {error && <div className="bg-danger-bg border t-border-err rounded-md px-3.5 py-2.5 text-danger font-mono text-[13px] mb-1">{error}</div>}
+        <div className="flex gap-2 justify-end mt-[18px]">
+          <button className="bg-main text-fg border border-edge t-hover-cancel px-4 py-[7px] rounded-md font-medium text-[13px] cursor-pointer disabled:opacity-55 disabled:cursor-default" onClick={onClose}>Cancel</button>
+          <button className="bg-accent hover:bg-accent-hover text-white px-4 py-[7px] rounded-md font-medium text-[13px] border-none cursor-pointer disabled:opacity-55 disabled:cursor-default"
+            onClick={action} disabled={loading}>
+            {actionLabel}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────
+// Sidebar
+// ─────────────────────────────────────────────
+function Sidebar({ databases, expandedDbs, selectedDb, selectedTable, onToggleDb, onSelectTable, onAddDb }) {
+  return (
+    <div className="w-[240px] bg-sb text-sb-text flex flex-col overflow-y-auto shrink-0 border-r border-white/[0.06]">
+      <div className="px-2 pt-3 pb-1">
+        <div className="px-2 pt-1 pb-1.5 text-[11px] font-semibold uppercase tracking-[0.07em] text-sb-muted flex items-center justify-between">
+          Databases
+          <button className="bg-transparent border-none text-sb-muted cursor-pointer leading-none p-0.5 hover:text-white transition-colors" title="Register database" onClick={onAddDb}>
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M7 1v12M1 7h12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+            </svg>
+          </button>
+        </div>
+        {databases.length === 0
+          ? <button className="w-full mt-1 px-3 py-2 rounded-md border border-dashed border-white/15 text-sb-muted text-xs cursor-pointer hover:border-accent/40 hover:text-white/60 transition-colors text-left" onClick={onAddDb}>No databases yet — add one</button>
+          : databases.map(db => (
+            <DbItem key={db.name} db={db}
+              expanded={expandedDbs.has(db.name)}
+              selectedDb={selectedDb} selectedTable={selectedTable}
+              onToggle={() => onToggleDb(db.name)}
+              onSelectTable={onSelectTable} />
+          ))
+        }
+      </div>
+    </div>
+  );
+}
+
+function DbItem({ db, expanded, selectedDb, selectedTable, onToggle, onSelectTable }) {
+  const isSel = selectedDb === db.name;
+  const tables = db.tables || [];
+  return (
+    <div>
+      <div className={`flex items-center gap-[7px] px-2 py-1.5 rounded-md cursor-pointer text-[13px] font-medium${isSel && !selectedTable ? ' bg-sb-active text-white sb-active-item' : ' text-white/75 hover:bg-sb-hover'}`} onClick={() => { onToggle(); onSelectTable(db.name, null); }}>
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" className="shrink-0 opacity-75">
+          <ellipse cx="8" cy="4.5" rx="5.5" ry="2" stroke="currentColor" strokeWidth="1.3" fill="currentColor" fillOpacity="0.15"/>
+          <path d="M2.5 4.5v3.5c0 1.1 2.46 2 5.5 2s5.5-.9 5.5-2V4.5" stroke="currentColor" strokeWidth="1.3" fill="none"/>
+          <path d="M2.5 8v3.5c0 1.1 2.46 2 5.5 2s5.5-.9 5.5-2V8" stroke="currentColor" strokeWidth="1.3" fill="none"/>
+        </svg>
+        <span className="flex-1 overflow-hidden text-ellipsis whitespace-nowrap" title={db.name}>
+          {db.name}
+        </span>
+        <svg width="8" height="8" viewBox="0 0 8 8" fill="currentColor" className={`opacity-35 transition-transform duration-150 ml-auto shrink-0${expanded ? ' rotate-90' : ''}`}>
+          <path d="M2 1l4 3-4 3" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+      </div>
+      {expanded && (
+        <div className="py-px pb-1 pl-[28px]">
+          {tables.length
+            ? tables.map(t => (
+              <div key={t.name}
+                className={`flex items-center gap-1.5 px-2 py-[5px] rounded-[5px] cursor-pointer text-xs${isSel && selectedTable === t.name ? ' bg-sb-active text-white sb-active-item' : ' text-white/50 hover:bg-sb-hover hover:text-white/80'}`}
+                onClick={() => onSelectTable(db.name, t.name)}>
+                <svg width="11" height="11" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg" className="shrink-0 opacity-60">
+                  <rect x="0.75" y="0.75" width="10.5" height="10.5" rx="1.5" stroke="currentColor" strokeWidth="1.2"/>
+                  <line x1="0.75" y1="4.25" x2="11.25" y2="4.25" stroke="currentColor" strokeWidth="1.2"/>
+                  <line x1="4.25" y1="4.25" x2="4.25" y2="11.25" stroke="currentColor" strokeWidth="1.2"/>
+                </svg>
+                {t.name}
+              </div>
+            ))
+            : <div className="px-2 py-1.5 text-xs text-sb-muted">No tables</div>
+          }
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────
+// BrowseTab
+// ─────────────────────────────────────────────
+function BrowseTab({ db, table, schema, rows, total, limit, offset, orderBy, orderDir, loading, error, onSort, onPageChange, onLimitChange, onRowSaved }) {
+  const cols = rows.length > 0 ? Object.keys(rows[0]) : schema.map(c => c.name);
+  const totalPages = Math.max(1, Math.ceil(total / limit));
+  const page = Math.floor(offset / limit);
+  const start = total ? offset + 1 : 0;
+  const end = Math.min(offset + limit, total);
+  const [showAddRow, setShowAddRow] = useState(false);
+
+  if (error) return <div className="bg-danger-bg border t-border-err rounded-md px-3.5 py-2.5 text-danger font-mono text-[13px]">{error}</div>;
+
+  const pagination = (
+    <div className="flex items-center gap-2 py-2.5 text-[13px] text-muted">
+      <button className="flex items-center gap-1 px-2.5 py-1 border border-edge rounded-[5px] bg-surface cursor-pointer text-[13px] t-hover-btn disabled:opacity-40 disabled:cursor-default" onClick={() => onPageChange(page - 1)} disabled={page === 0}>
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M7.5 2L3.5 6l4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+        Prev
+      </button>
+      <span>{total === 0 ? 'No rows' : `${start}–${end} of ${total.toLocaleString()}`}</span>
+      <button className="flex items-center gap-1 px-2.5 py-1 border border-edge rounded-[5px] bg-surface cursor-pointer text-[13px] t-hover-btn disabled:opacity-40 disabled:cursor-default" onClick={() => onPageChange(page + 1)} disabled={page >= totalPages - 1}>
+        Next
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M4.5 2l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+      </button>
+      <span className="ml-1 text-muted/60">Page {page + 1} of {totalPages}</span>
+      <span className="ml-auto flex items-center gap-1.5">
+        <span className="text-[12px]">Rows</span>
+        <select value={limit} onChange={e => onLimitChange(+e.target.value)}
+          className="py-[3px] px-1.5 border border-edge rounded text-[13px] bg-surface">
+          {[25, 50, 100, 250].map(n => <option key={n}>{n}</option>)}
+        </select>
+      </span>
+    </div>
+  );
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-2.5">
+        <strong className="text-[15px]">{table}</strong>
+        <div className="flex items-center gap-3">
+          <span className="text-muted text-[13px]">{total.toLocaleString()} rows</span>
+          <button className="flex items-center gap-1 px-3 py-[5px] rounded-md bg-accent hover:bg-accent-hover text-white text-[13px] font-medium border-none cursor-pointer" onClick={() => setShowAddRow(true)}>
+            <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M5.5 1v9M1 5.5h9" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/></svg>
+            Add row
+          </button>
+        </div>
+      </div>
+
+      {showAddRow && (
+        <AddRowModal schema={schema} db={db} table={table}
+          onClose={() => setShowAddRow(false)}
+          onSaved={() => { setShowAddRow(false); onRowSaved?.(); }} />
+      )}
+
+      {pagination}
+
+      <DataTable
+        key={`${db}.${table}`}
+        columns={cols}
+        rows={rows}
+        onSort={onSort}
+        sortBy={orderBy}
+        sortDir={orderDir}
+        schema={schema}
+        db={db}
+        table={table}
+        onRowSaved={onRowSaved}
+      />
+
+      {pagination}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────
+// QueryTab
+// ─────────────────────────────────────────────
+function QueryTab({ databases, defaultDb, defaultTable }) {
+  const [queryDb, setQueryDb] = useState(defaultDb || '');
+  const [sql, setSql] = useState(defaultTable ? `SELECT * FROM "${defaultTable}" LIMIT 100;` : '');
+  const [result, setResult] = useState(null);
+  const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [elapsed, setElapsed] = useState(null);
+
+  useEffect(() => { if (defaultDb) setQueryDb(defaultDb); }, [defaultDb]);
+  useEffect(() => { if (defaultTable) setSql(`SELECT * FROM "${defaultTable}" LIMIT 100;`); }, [defaultTable]);
+
+  async function runQuery() {
+    const db = queryDb, q = sql.trim();
+    if (!db || !q) return;
+    setLoading(true); setError(null); setResult(null);
+    const t0 = Date.now();
+    const data = await apiFetch(`/api/databases/${db}/query`, { method: 'POST', body: { sql: q } });
+    setElapsed(Date.now() - t0);
+    setLoading(false);
+    if (data._err) { setError(data._err); return; }
+    setResult(data);
+  }
+
+  const cmRef = useRef(null);
+  const cmInstanceRef = useRef(null);
+
+  // Set up CodeMirror on mount
+  useEffect(() => {
+    if (!cmRef.current || cmInstanceRef.current) return;
+    const cm = CodeMirror(cmRef.current, {
+      value: sql,
+      mode: 'text/x-sql',
+      theme: 'material-darker',
+      lineNumbers: true,
+      matchBrackets: true,
+      autoCloseBrackets: true,
+      indentWithTabs: true,
+      tabSize: 2,
+      extraKeys: {
+        'Ctrl-Space': 'autocomplete',
+        'Cmd-Space': 'autocomplete',
+        'Ctrl-Enter': runQuery,
+        'Cmd-Enter': runQuery,
+      },
+      hintOptions: {
+        completeSingle: false,
+        tables: {},
+      },
+    });
+    cm.on('change', () => setSql(cm.getValue()));
+    cmInstanceRef.current = cm;
+    setTimeout(() => { cm.refresh(); }, 0);
+  }, []);
+
+  // Sync sql state into CodeMirror when changed externally (e.g. clicking a table)
+  useEffect(() => {
+    const cm = cmInstanceRef.current;
+    if (cm && cm.getValue() !== sql) {
+      cm.setValue(sql);
+    }
+  }, [sql]);
+
+  const resultCols = result?.columns ?? (result?.rows?.[0] ? Object.keys(result.rows[0]) : []);
+
+  let meta = 'Ctrl+Enter to run';
+  if (loading) meta = 'Running…';
+  else if (elapsed !== null && result) {
+    if (result.rows !== undefined) {
+      meta = `${result.rowcount.toLocaleString()} rows · ${elapsed}ms${result.truncated ? ' · truncated at 10 000' : ''}`;
+    } else {
+      meta = `Done · ${elapsed}ms`;
+    }
+  } else if (elapsed !== null && error) {
+    meta = `Error · ${elapsed}ms`;
+  }
+
+  return (
+    <div className="flex flex-col gap-3">
+      <div>
+        <div className="flex items-center gap-2 mb-2.5">
+          <label className="text-[13px] font-medium whitespace-nowrap">Database:</label>
+          <select value={queryDb} onChange={e => setQueryDb(e.target.value)}
+            className="py-[5px] px-2 border border-edge rounded-[5px] text-[13px] bg-surface">
+            {databases.length
+              ? databases.map(d => <option key={d.name} value={d.name}>{d.name}</option>)
+              : <option value="">— none —</option>
+            }
+          </select>
+        </div>
+        <div ref={cmRef}></div>
+        <div className="flex gap-2 items-center mt-2">
+          <button className="bg-accent hover:bg-accent-hover text-white px-4 py-[7px] rounded-md font-medium text-[13px] border-none cursor-pointer disabled:opacity-55 disabled:cursor-default" onClick={runQuery} disabled={loading}>
+            {loading ? '⏳ Running…' : '▶ Run'}
+          </button>
+          <span className="text-xs text-muted">{meta}</span>
+        </div>
+      </div>
+
+      {error && <div className="bg-danger-bg border t-border-err rounded-md px-3.5 py-2.5 text-danger font-mono text-[13px]">{error}</div>}
+
+      {result?.rows !== undefined && (
+        <DataTable
+          key={resultCols.join('\x00') + result.rowcount}
+          columns={resultCols}
+          rows={result.rows}
+          maxHeight="380px"
+        />
+      )}
+
+      {result && result.rows === undefined && (
+        <div className="bg-ok-bg border t-border-ok rounded-md px-3.5 py-2.5 text-ok text-[13px]">
+          ✓ Query executed — {result.rowcount} row(s) affected
+          {result.lastrowid ? ` · last insert id: ${result.lastrowid}` : ''}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────
+// BackupsTab
+// ─────────────────────────────────────────────
+function BackupsTab({ databases, selectedDb, onRefresh }) {
+  const [db, setDb] = useState(selectedDb || '');
+  const [backups, setBackups] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [creating, setCreating] = useState(false);
+  const [restoring, setRestoring] = useState(null);
+  const [error, setError] = useState(null);
+  const [msg, setMsg] = useState(null);
+
+  useEffect(() => { if (selectedDb) setDb(selectedDb); }, [selectedDb]);
+
+  useEffect(() => {
+    if (!db) { setBackups([]); return; }
+    let cancelled = false;
+    setLoading(true);
+    setError(null);
+    (async () => {
+      const data = await apiFetch(`/api/databases/${db}/backups`);
+      if (cancelled) return;
+      if (data._err) { setError(data._err); setLoading(false); return; }
+      setBackups(data.backups || []);
+      setLoading(false);
+    })();
+    return () => { cancelled = true; };
+  }, [db, onRefresh]);
+
+  async function createBackup() {
+    setCreating(true); setError(null); setMsg(null);
+    const data = await apiFetch(`/api/databases/${db}/backup`, { method: 'POST' });
+    setCreating(false);
+    if (data._err) { setError(data._err); return; }
+    setMsg(`Backup created: ${data.filename} (${formatSize(data.size_bytes)})`);
+    // Reload list
+    const list = await apiFetch(`/api/databases/${db}/backups`);
+    if (!list._err) setBackups(list.backups || []);
+  }
+
+  async function restoreBackup(filename) {
+    const ok = window.confirm(`Restore database "${db}" from "${filename}"?\n\nThis will replace the current database with the backup version.`);
+    if (!ok) return;
+    setRestoring(filename); setError(null); setMsg(null);
+    const data = await apiFetch(`/api/databases/${db}/backups/${encodeURIComponent(filename)}/restore`, { method: 'POST' });
+    setRestoring(null);
+    if (data._err) { setError(data._err); return; }
+    setMsg(`Restored from ${filename}`);
+  }
+
+  async function deleteBackup(filename) {
+    const ok = window.confirm(`Delete backup "${filename}"?`);
+    if (!ok) return;
+    setError(null); setMsg(null);
+    const data = await apiFetch(`/api/databases/${db}/backups/${encodeURIComponent(filename)}`, { method: 'DELETE' });
+    if (data._err) { setError(data._err); return; }
+    setBackups(prev => prev.filter(b => b.filename !== filename));
+  }
+
+  function formatSize(bytes) {
+    if (!bytes) return '—';
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+    if (bytes < 1073741824) return (bytes / 1048576).toFixed(1) + ' MB';
+    return (bytes / 1073741824).toFixed(2) + ' GB';
+  }
+
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="flex items-center gap-3">
+        <label className="text-[13px] font-medium whitespace-nowrap">Database:</label>
+        <select value={db} onChange={e => { setDb(e.target.value); setError(null); setMsg(null); }}
+          className="py-[5px] px-2 border border-edge rounded-[5px] text-[13px] bg-surface">
+          {databases.length
+            ? databases.map(d => <option key={d.name} value={d.name}>{d.name}</option>)
+            : <option value="">— none —</option>
+          }
+        </select>
+        {db && (
+          <button className="bg-accent hover:bg-accent-hover text-white px-4 py-[7px] rounded-md font-medium text-[13px] border-none cursor-pointer disabled:opacity-55 disabled:cursor-default" onClick={createBackup} disabled={creating}>
+            {creating ? 'Backing up…' : 'Backup now'}
+          </button>
+        )}
+      </div>
+
+      {error && <div className="bg-danger-bg border t-border-err rounded-md px-3.5 py-2.5 text-danger font-mono text-[13px]">{error}</div>}
+      {msg && <div className="bg-ok-bg border t-border-ok rounded-md px-3.5 py-2.5 text-ok text-[13px]">{msg}</div>}
+
+      {!db ? (
+        <div className="text-muted">Select a database to manage backups.</div>
+      ) : loading ? (
+        <div className="text-muted">Loading backups…</div>
+      ) : (
+        <div>
+          <h3 className="text-[15px] font-semibold mb-2">Backups ({backups.length})</h3>
+          {backups.length === 0 ? (
+            <div className="text-muted text-[13px] py-3">No backups yet. Click "Backup now" to create one.</div>
+          ) : (
+            <div className="border border-edge rounded-lg overflow-hidden bg-surface">
+              <table className="border-collapse text-[13px] w-full">
+                <thead>
+                  <tr>
+                    <th className="px-4 py-[9px] bg-main text-left font-semibold text-muted border-b border-edge">Backup</th>
+                    <th className="px-4 py-[9px] bg-main text-right font-semibold text-muted border-b border-edge">Size</th>
+                    <th className="px-4 py-[9px] bg-main text-right font-semibold text-muted border-b border-edge w-[260px]">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {backups.map(b => (
+                    <tr key={b.filename} className="border-b border-edge last:border-b-0">
+                      <td className="px-4 py-2.5">
+                        <div className="font-mono text-[12px] break-all">{b.filename}</div>
+                        <div className="text-[11px] text-muted mt-0.5">{b.created_at}</div>
+                      </td>
+                      <td className="px-4 py-2.5 text-right tabular-nums text-muted">{formatSize(b.size_bytes)}</td>
+                      <td className="px-4 py-2.5 text-right">
+                        <div className="flex gap-1.5 justify-end">
+                          <a className="px-2 py-[3px] rounded border border-edge text-[12px] text-fg no-underline hover:bg-main cursor-pointer"
+                            href={`${_url}/api/databases/${db}/backups/${encodeURIComponent(b.filename)}`}
+                            download>Download</a>
+                          <button className="px-2 py-[3px] rounded border border-accent text-accent text-[12px] bg-transparent cursor-pointer t-hover-restore disabled:opacity-55 disabled:cursor-default"
+                            onClick={() => restoreBackup(b.filename)} disabled={restoring === b.filename}>
+                            {restoring === b.filename ? 'Restoring…' : 'Restore'}
+                          </button>
+                          <button className="px-2 py-[3px] rounded border t-border-err text-danger text-[12px] bg-surface cursor-pointer t-hover-delete"
+                            onClick={() => deleteBackup(b.filename)}>Delete</button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────
+// DbInfoTab
+// ─────────────────────────────────────────────
+function DbInfoTab({ databases, selectedDb, onDeleteDb }) {
+  const [db, setDb] = useState(selectedDb || '');
+  const [tables, setTables] = useState([]);
+  const [meta, setMeta] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [showRaw, setShowRaw] = useState({});
+  const [rawSql, setRawSql] = useState({});
+
+  useEffect(() => { if (selectedDb) setDb(selectedDb); }, [selectedDb]);
+
+  useEffect(() => {
+    if (!db) { setTables([]); setMeta(null); return; }
+    let cancelled = false;
+    setLoading(true);
+    (async () => {
+      const [tblData, infoData] = await Promise.all([
+        apiFetch(`/api/databases/${db}/tables`),
+        apiFetch(`/api/databases/${db}/info`),
+      ]);
+      if (cancelled) return;
+      if (!tblData._err) setTables(tblData.tables || []);
+      if (infoData && !infoData._err) {
+        setMeta({
+          version: infoData.sqlite_version || '—',
+          journalMode: infoData.journal_mode || '—',
+          pageSize: infoData.page_size || '—',
+          encoding: infoData.encoding || '—',
+        });
+      }
+      setLoading(false);
+    })();
+    return () => { cancelled = true; };
+  }, [db]);
+
+  const dbInfo = databases.find(d => d.name === db);
+
+  function formatSize(bytes) {
+    if (!bytes) return '—';
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+    if (bytes < 1073741824) return (bytes / 1048576).toFixed(1) + ' MB';
+    return (bytes / 1073741824).toFixed(2) + ' GB';
+  }
+
+  return (
+    <div className="flex flex-col gap-5">
+      <div className="flex items-center gap-2">
+        <label className="text-[13px] font-medium whitespace-nowrap">Database:</label>
+        <select value={db} onChange={e => setDb(e.target.value)}
+          className="py-[5px] px-2 border border-edge rounded-[5px] text-[13px] bg-surface">
+          {databases.length
+            ? databases.map(d => <option key={d.name} value={d.name}>{d.name}</option>)
+            : <option value="">— none —</option>
+          }
+        </select>
+      </div>
+
+      {!db ? (
+        <div className="text-muted">Select a database to view its information.</div>
+      ) : loading ? (
+        <div className="text-muted">Loading…</div>
+      ) : (
+        <>
+          {/* File info — path + stat chips */}
+          <div className="border border-edge rounded-lg overflow-hidden bg-surface">
+            <div className="px-4 py-3 border-b border-edge">
+              <div className="text-[10px] font-semibold text-muted uppercase tracking-[0.07em] mb-1">File path</div>
+              <div className="font-mono text-[12px] break-all text-fg">{dbInfo?.path || '—'}</div>
+            </div>
+            <div className="grid grid-cols-5 divide-x divide-edge">
+              {[
+                { label: 'Size',     value: dbInfo ? formatSize(dbInfo.size_bytes) : '—' },
+                { label: 'SQLite',   value: meta?.version || '—' },
+                { label: 'Journal',  value: meta?.journalMode || '—' },
+                { label: 'Page',     value: meta?.pageSize ? formatSize(meta.pageSize) : '—' },
+                { label: 'Encoding', value: meta?.encoding || '—' },
+              ].map(({ label, value }) => (
+                <div key={label} className="px-4 py-3">
+                  <div className="text-[10px] font-semibold text-muted uppercase tracking-[0.07em] mb-1">{label}</div>
+                  <div className="text-[13px] font-medium tabular-nums">{value}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Schema — one card per table (Tables summary merged in) */}
+          <div>
+            <div className="text-[10px] font-semibold text-muted uppercase tracking-[0.07em] mb-3">
+              Tables ({tables.length})
+            </div>
+            {tables.length === 0 ? (
+              <div className="text-muted text-[13px]">No tables found.</div>
+            ) : (
+              <div className="flex flex-col gap-3">
+                {tables.map(t => (
+                  <div key={t.name} className="border border-edge rounded-lg overflow-hidden bg-surface">
+                    <div className="px-4 py-2.5 bg-main border-b border-edge flex items-center gap-2.5">
+                      <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg" className="shrink-0 text-muted">
+                        <rect x="0.75" y="0.75" width="10.5" height="10.5" rx="1.5" stroke="currentColor" strokeWidth="1.2"/>
+                        <line x1="0.75" y1="4.25" x2="11.25" y2="4.25" stroke="currentColor" strokeWidth="1.2"/>
+                        <line x1="4.25" y1="4.25" x2="4.25" y2="11.25" stroke="currentColor" strokeWidth="1.2"/>
+                      </svg>
+                      <span className="font-semibold text-[13px]">{t.name}</span>
+                      <span className="text-[12px] text-muted font-normal">
+                        {t.columns?.length || 0} col · {(t.row_count || 0).toLocaleString()} rows
+                      </span>
+                      <button
+                        className="ml-auto text-accent text-[12px] font-medium cursor-pointer bg-transparent border-none hover:underline"
+                        onClick={async () => {
+                          if (showRaw[t.name]) {
+                            setShowRaw(prev => ({ ...prev, [t.name]: false }));
+                          } else {
+                            if (!rawSql[t.name]) {
+                              const data = await apiFetch(`/api/databases/${db}/tables/${encodeURIComponent(t.name)}/ddl`);
+                              if (!data._err) setRawSql(prev => ({ ...prev, [t.name]: data.sql }));
+                            }
+                            setShowRaw(prev => ({ ...prev, [t.name]: true }));
+                          }
+                        }}>
+                        {showRaw[t.name] ? 'Hide SQL' : 'View SQL'}
+                      </button>
+                    </div>
+                    {showRaw[t.name] && rawSql[t.name] && (
+                      <pre className="px-4 py-3 bg-code-bg text-code-text text-[12px] font-mono overflow-x-auto whitespace-pre m-0 border-b border-edge">{rawSql[t.name]}</pre>
+                    )}
+                    <table className="border-collapse text-[13px] w-full">
+                      <thead>
+                        <tr>
+                          <th className="px-4 py-[7px] bg-main text-left font-semibold text-muted border-b border-edge w-[180px]">Column</th>
+                          <th className="px-4 py-[7px] bg-main text-left font-semibold text-muted border-b border-edge w-[120px]">Type</th>
+                          <th className="px-4 py-[7px] bg-main text-center font-semibold text-muted border-b border-edge w-[60px]">Null</th>
+                          <th className="px-4 py-[7px] bg-main text-left font-semibold text-muted border-b border-edge w-[100px]">Default</th>
+                          <th className="px-4 py-[7px] bg-main text-center font-semibold text-muted border-b border-edge w-[60px]">PK</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {(t.columns || []).map((c, ci) => (
+                          <tr key={c.name} className={ci < t.columns.length - 1 ? 'border-b border-edge' : ''}>
+                            <td className="px-4 py-2 font-medium">{c.name}</td>
+                            <td className="px-4 py-2 text-muted font-mono text-[12px]">{c.type || '—'}</td>
+                            <td className="px-4 py-2 text-center">{c.notnull ? <span className="text-muted">✗</span> : <span className="text-ok">✓</span>}</td>
+                            <td className="px-4 py-2 font-mono text-[12px] text-muted">{c.dflt_value !== null ? String(c.dflt_value) : '—'}</td>
+                            <td className="px-4 py-2 text-center">{c.pk ? <span className="text-accent font-bold">PK</span> : ''}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Danger zone */}
+          {db && (
+            <div className="border border-[var(--err-border)] rounded-lg p-4 mt-2">
+              <div className="text-[10px] font-semibold text-danger/70 uppercase tracking-[0.07em] mb-1">Danger zone</div>
+              <div className="flex items-center justify-between gap-4">
+                <p className="text-[13px] text-muted">Permanently delete <span className="text-fg font-medium">{db}</span> and its file from disk. This cannot be undone.</p>
+                <button
+                  className="shrink-0 px-3 py-1.5 rounded-md border t-border-err text-danger bg-surface t-hover-delete cursor-pointer text-[12px] font-medium whitespace-nowrap"
+                  onClick={() => onDeleteDb(db)}>
+                  Delete database
+                </button>
+              </div>
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────
+// App — root component
+// ─────────────────────────────────────────────
+function App() {
+  const [darkMode,  setDarkMode]  = useState(() => {
+    const saved = localStorage.getItem('edb_theme');
+    if (saved) return saved === 'dark';
+    return !window.matchMedia('(prefers-color-scheme: light)').matches;
+  });
+  const [apiKey,    setApiKey]    = useState(sessionStorage.getItem('edb_key') || '');
+  const [serverUrl, setServerUrl] = useState(sessionStorage.getItem('edb_url') || window.location.origin);
+  const [showAuth,  setShowAuth]  = useState(!sessionStorage.getItem('edb_key'));
+
+  const [databases,   setDatabases]   = useState([]);
+  const [expandedDbs, setExpandedDbs] = useState(new Set());
+  const [showAddDb,   setShowAddDb]   = useState(false);
+
+  const [selectedDb,    setSelectedDb]    = useState(null);
+  const [selectedTable, setSelectedTable] = useState(null);
+  const [schema,        setSchema]        = useState([]);
+
+  const [tab, setTab] = useState('browse');
+
+  const [rows,       setRows]       = useState([]);
+  const [total,      setTotal]      = useState(0);
+  const [limit,      setLimit]      = useState(50);
+  const [offset,     setOffset]     = useState(0);
+  const [orderBy,    setOrderBy]    = useState(null);
+  const [orderDir,   setOrderDir]   = useState('ASC');
+  const [browseErr,  setBrowseErr]  = useState(null);
+  const [refreshKey, setRefreshKey] = useState(0);
+  const [backupRefresh, setBackupRefresh] = useState(0);
+  const insecure = isInsecure();
+  const [showInsecure, setShowInsecure] = useState(insecure && !sessionStorage.getItem(INSECURE_ACK));
+  const [devMode, setDevMode] = useState(false);
+  const [showDevMode, setShowDevMode] = useState(false);
+
+  // ── Helpers ──────────────────────────────
+
+  const loadDatabases = useCallback(async () => {
+    const data = await apiFetch('/api/databases');
+    if (data._err) return;
+    setDatabases(prev => {
+      const prevMap = Object.fromEntries(prev.map(d => [d.name, d]));
+      return data.databases.map(d => ({ ...d, tables: prevMap[d.name]?.tables }));
+    });
+  }, []);
+
+  const loadTables = useCallback(async dbName => {
+    const data = await apiFetch(`/api/databases/${dbName}/tables`);
+    if (data._err) return;
+    setDatabases(prev => prev.map(d => d.name === dbName ? { ...d, tables: data.tables } : d));
+  }, []);
+
+  // ── Effects ──────────────────────────────
+
+  useEffect(() => {
+    document.documentElement.classList.toggle('light', !darkMode);
+    localStorage.setItem('edb_theme', darkMode ? 'dark' : 'light');
+  }, [darkMode]);
+
+  function parseHash() {
+    const p = new URLSearchParams(location.hash.slice(1));
+    return { db: p.get('db') || null, table: p.get('table') || null, tab: p.get('tab') || 'browse' };
+  }
+
+  useEffect(() => {
+    async function onPopState() {
+      const { db, table, tab: t } = parseHash();
+      setTab(t);
+      setSelectedDb(db);
+      setSelectedTable(table);
+      setRows([]); setTotal(0); setOffset(0); setOrderBy(null); setOrderDir('ASC');
+      setBrowseErr(null);
+      if (db) setExpandedDbs(prev => new Set([...prev, db]));
+      if (!table) { setSchema([]); return; }
+      const data = await apiFetch(`/api/databases/${db}/tables/${table}/schema`);
+      setSchema(data._err ? [] : data.columns);
+    }
+
+    window.addEventListener('popstate', onPopState);
+    return () => window.removeEventListener('popstate', onPopState);
+  }, []);
+
+  useEffect(() => {
+    // Check if server is in dev mode (no API keys)
+    fetch((serverUrl || window.location.origin) + '/health')
+      .then(r => r.json())
+      .then(d => {
+        if (d.dev_mode) {
+          setDevMode(true);
+          if (!sessionStorage.getItem(DEV_ACK)) setShowDevMode(true);
+        }
+      })
+      .catch(() => {});
+
+    if (apiKey) {
+      setAuth(apiKey, serverUrl);
+      (async () => {
+        await loadDatabases();
+        const { db, table, tab: t } = parseHash();
+        if (!db) return;
+        setTab(t);
+        setSelectedDb(db);
+        setExpandedDbs(new Set([db]));
+        await loadTables(db);
+        if (!table) return;
+        setSelectedTable(table);
+        const data = await apiFetch(`/api/databases/${db}/tables/${table}/schema`);
+        setSchema(data._err ? [] : data.columns);
+      })();
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!selectedDb || !selectedTable) return;
+    let cancelled = false;
+    setBrowseErr(null);
+    (async () => {
+      let url = `/api/databases/${selectedDb}/tables/${selectedTable}/rows?limit=${limit}&offset=${offset}`;
+      if (orderBy) url += `&order_by=${encodeURIComponent(orderBy)}&order_dir=${orderDir}`;
+      const data = await apiFetch(url);
+      if (cancelled) return;
+      if (data._err) { setBrowseErr(data._err); return; }
+      setRows(data.rows);
+      setTotal(data.total);
+    })();
+    return () => { cancelled = true; };
+  }, [selectedDb, selectedTable, limit, offset, orderBy, orderDir, refreshKey]);
+
+  // ── Auth ─────────────────────────────────
+
+  async function handleConnect(key, url) {
+    const data = await apiFetch('/api/databases', { key, url });
+    if (data._err) return data._err;
+    setApiKey(key); setServerUrl(url);
+    sessionStorage.setItem('edb_key', key);
+    sessionStorage.setItem('edb_url', url);
+    setAuth(key, url);
+    setShowAuth(false);
+    setSelectedDb(null); setSelectedTable(null);
+    setRows([]); setTotal(0); setOffset(0); setOrderBy(null);
+    setDatabases(data.databases || []);
+    setExpandedDbs(new Set());
+    history.replaceState(null, '', location.pathname);
+    return null;
+  }
+
+  // ── Sidebar ───────────────────────────────
+
+  async function toggleDb(name) {
+    setExpandedDbs(prev => {
+      const next = new Set(prev);
+      next.has(name) ? next.delete(name) : next.add(name);
+      return next;
+    });
+    const db = databases.find(d => d.name === name);
+    if (!db?.tables) await loadTables(name);
+  }
+
+  function buildHash(db, table, t) {
+    const p = new URLSearchParams();
+    if (db) p.set('db', db);
+    if (table) p.set('table', table);
+    if (t && t !== 'browse') p.set('tab', t);
+    const s = p.toString();
+    return s ? '#' + s : location.pathname;
+  }
+
+  function pushNav(db, table, t) {
+    history.pushState(null, '', buildHash(db, table, t));
+  }
+
+  async function selectTable(dbName, tableName, push = true) {
+    if (push && (dbName !== selectedDb || tableName !== selectedTable)) {
+      pushNav(dbName, tableName, tab);
+    }
+    setSelectedDb(dbName);
+    setSelectedTable(tableName);
+    setRows([]); setTotal(0); setOffset(0); setOrderBy(null); setOrderDir('ASC');
+    setBrowseErr(null);
+    if (!tableName) { setSchema([]); return; }
+    const data = await apiFetch(`/api/databases/${dbName}/tables/${tableName}/schema`);
+    setSchema(data._err ? [] : data.columns);
+  }
+
+  function switchTab(t) {
+    if (t !== tab) pushNav(selectedDb, selectedTable, t);
+    setTab(t);
+  }
+
+  // ── Database CRUD ─────────────────────────
+
+  async function handleRegister(name, path) {
+    const res = await apiFetch('/api/databases', {
+      method: 'POST', body: { name, path: path || undefined },
+    });
+    if (res._err) return res._err;
+    setShowAddDb(false);
+    await loadDatabases();
+    setExpandedDbs(prev => new Set([...prev, name]));
+    await loadTables(name);
+    return null;
+  }
+
+  async function handleUpload(name, file) {
+    const formData = new FormData();
+    formData.append('file', file);
+    try {
+      const res = await fetch(`${_url}/api/databases/upload?name=${encodeURIComponent(name)}`, {
+        method: 'POST',
+        headers: { 'X-API-Key': _key },
+        body: formData,
+      });
+      const data = await res.json();
+      if (!res.ok) return data.detail || JSON.stringify(data);
+      setShowAddDb(false);
+      await loadDatabases();
+      setExpandedDbs(prev => new Set([...prev, name]));
+      await loadTables(name);
+      return null;
+    } catch (e) {
+      return e.message;
+    }
+  }
+
+  async function handleImportUrl(name, url) {
+    const res = await apiFetch('/api/databases/import', {
+      method: 'POST', body: { name, url },
+    });
+    if (res._err) return res._err;
+    setShowAddDb(false);
+    await loadDatabases();
+    setExpandedDbs(prev => new Set([...prev, name]));
+    await loadTables(name);
+    return null;
+  }
+
+  async function handleDeleteDb(name) {
+    const del = window.confirm(`Delete database "${name}" and its file? This cannot be undone.`);
+    if (!del) return;
+    const res = await apiFetch(`/api/databases/${encodeURIComponent(name)}?delete_file=true`, { method: 'DELETE' });
+    if (res._err) { alert(res._err); return; }
+    if (selectedDb === name) {
+      setSelectedDb(null); setSelectedTable(null);
+      setRows([]); setTotal(0); setOffset(0); setOrderBy(null);
+    }
+    setExpandedDbs(prev => { const s = new Set(prev); s.delete(name); return s; });
+    await loadDatabases();
+  }
+
+  // ── Sort / pagination ─────────────────────
+
+  function handleSort(col) {
+    if (orderBy === col) {
+      setOrderDir(d => d === 'ASC' ? 'DESC' : 'ASC');
+    } else {
+      setOrderBy(col);
+      setOrderDir('ASC');
+    }
+    setOffset(0);
+  }
+
+  function handlePageChange(page) {
+    setOffset(page * limit);
+  }
+
+  function handleLimitChange(n) {
+    setLimit(n);
+    setOffset(0);
+  }
+
+  // ── Render ───────────────────────────────
+
+  return (
+    <>
+      {showAuth && (
+        <AuthModal initialKey={apiKey} initialUrl={serverUrl} onConnect={handleConnect} />
+      )}
+      {showAddDb && (
+        <AddDbModal onRegister={handleRegister} onUpload={handleUpload} onImportUrl={handleImportUrl} onClose={() => setShowAddDb(false)} />
+      )}
+      {showInsecure && (
+        <InsecureModal onClose={() => { setShowInsecure(false); sessionStorage.setItem(INSECURE_ACK, '1'); }} />
+      )}
+      {showDevMode && (
+        <DevModeModal onClose={() => { setShowDevMode(false); sessionStorage.setItem(DEV_ACK, '1'); }} />
+      )}
+
+      <div className="h-[50px] bg-sb flex items-center px-4 gap-3 shrink-0">
+        <div className="text-[17px] font-bold text-white tracking-[-0.3px] flex items-center gap-2">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="26" height="26" className="shrink-0">
+            <rect width="32" height="32" rx="8" fill="#141414"/>
+            <ellipse cx="16" cy="11" rx="9" ry="4" fill="#3ecf8e"/>
+            <rect x="7" y="11" width="18" height="9" fill="#141414"/>
+            <ellipse cx="16" cy="20" rx="9" ry="4" fill="#2a9d6a"/>
+            <rect x="7" y="20" width="18" height="4" fill="#141414"/>
+            <ellipse cx="16" cy="24" rx="9" ry="4" fill="#1e7a50"/>
+          </svg>
+          <a href="/">Easy<span className="text-accent">DB</span></a>
+        </div>
+        <div className="text-sm text-sb-muted flex-1 overflow-hidden text-ellipsis whitespace-nowrap"> </div>
+        {insecure && (
+          <div className="flex items-center gap-1 px-2.5 py-[3px] rounded-md bg-[#ff98001a] border border-[#ff980044] text-[#ffb74d] text-[11px] font-semibold shrink-0 cursor-default" title="Connection is not encrypted (HTTP)">
+            &#9888;&#65039; HTTP
+          </div>
+        )}
+        {devMode && (
+          <div className="flex items-center gap-1 px-2.5 py-[3px] rounded-md bg-[#ff98001a] border border-[#ff980044] text-[#ffb74d] text-[11px] font-semibold shrink-0 cursor-default" title="No API key configured — anyone can access this server">
+            DEV MODE
+          </div>
+        )}
+        <button className="px-2 py-[5px] rounded-md border border-white/15 bg-white/7 text-white/80 text-sm cursor-pointer whitespace-nowrap hover:bg-white/12 leading-none" onClick={() => setDarkMode(d => !d)} title={darkMode ? 'Switch to light mode' : 'Switch to dark mode'}>{darkMode ? '☀' : '☾'}</button>
+        <a className="px-3 py-[5px] rounded-md border border-white/15 bg-white/7 text-white/80 text-xs cursor-pointer whitespace-nowrap no-underline hover:bg-white/12" href={`${serverUrl}/docs`} target="_blank" rel="noreferrer">API Docs ↗</a>
+        <button className="p-[7px] rounded-md border border-white/15 bg-white/7 text-white/80 cursor-pointer hover:bg-white/12" onClick={() => setShowAuth(true)} title="Change connection">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <line x1="5" y1="1.5" x2="5" y2="5.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+            <line x1="11" y1="1.5" x2="11" y2="5.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+            <rect x="2.75" y="5.5" width="10.5" height="5.5" rx="1.5" stroke="currentColor" strokeWidth="1.5"/>
+            <line x1="8" y1="11" x2="8" y2="14.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+          </svg>
+        </button>
+      </div>
+
+      <div className="flex flex-1 overflow-hidden">
+        <Sidebar
+          databases={databases}
+          expandedDbs={expandedDbs}
+          selectedDb={selectedDb}
+          selectedTable={selectedTable}
+          onToggleDb={toggleDb}
+          onSelectTable={selectTable}
+          onAddDb={() => setShowAddDb(true)}
+        />
+
+        <div className="flex-1 flex flex-col overflow-hidden">
+          <div className="flex border-b border-edge bg-surface shrink-0 px-4">
+            <div className={`flex items-center gap-1.5 px-3.5 py-[11px] text-[13px] font-medium cursor-pointer border-b-2 -mb-px ${tab === 'browse' ? 'text-accent border-accent' : 'text-muted border-transparent hover:text-fg'}`} onClick={() => switchTab('browse')}>
+              <svg width="13" height="13" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect x="0.75" y="0.75" width="12.5" height="12.5" rx="2" stroke="currentColor" strokeWidth="1.3"/>
+                <line x1="0.75" y1="4.75" x2="13.25" y2="4.75" stroke="currentColor" strokeWidth="1.3"/>
+                <line x1="5" y1="4.75" x2="5" y2="13.25" stroke="currentColor" strokeWidth="1.3"/>
+              </svg>
+              Browse
+            </div>
+            <div className={`flex items-center gap-1.5 px-3.5 py-[11px] text-[13px] font-medium cursor-pointer border-b-2 -mb-px ${tab === 'query' ? 'text-accent border-accent' : 'text-muted border-transparent hover:text-fg'}`} onClick={() => switchTab('query')}>
+              <svg width="13" height="13" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M2 4l3.5 3L2 10" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/>
+                <line x1="7.5" y1="10" x2="12" y2="10" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
+              </svg>
+              SQL Query
+            </div>
+            <div className={`flex items-center gap-1.5 px-3.5 py-[11px] text-[13px] font-medium cursor-pointer border-b-2 -mb-px ${tab === 'info' ? 'text-accent border-accent' : 'text-muted border-transparent hover:text-fg'}`} onClick={() => switchTab('info')}>
+              <svg width="13" height="13" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="7" cy="7" r="6" stroke="currentColor" strokeWidth="1.3"/>
+                <line x1="7" y1="6.5" x2="7" y2="10.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+                <circle cx="7" cy="4" r="0.8" fill="currentColor"/>
+              </svg>
+              Info
+            </div>
+            <div className={`flex items-center gap-1.5 px-3.5 py-[11px] text-[13px] font-medium cursor-pointer border-b-2 -mb-px ${tab === 'backups' ? 'text-accent border-accent' : 'text-muted border-transparent hover:text-fg'}`} onClick={() => switchTab('backups')}>
+              <svg width="13" height="13" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M7 1a6 6 0 1 0 6 6" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
+                <path d="M7 4v3l2 1.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M10 1h3v3" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+              Backups
+            </div>
+          </div>
+
+          <div className="flex-1 overflow-auto px-4 pt-4 pb-4">
+            {tab === 'browse' ? (
+              selectedTable ? (
+                <BrowseTab
+                  db={selectedDb} table={selectedTable} schema={schema}
+                  rows={rows} total={total} limit={limit} offset={offset}
+                  orderBy={orderBy} orderDir={orderDir}
+                  error={browseErr}
+                  onSort={handleSort}
+                  onPageChange={handlePageChange}
+                  onLimitChange={handleLimitChange}
+                  onRowSaved={() => setRefreshKey(k => k + 1)}
+                />
+              ) : (
+                <div className="flex flex-col items-center justify-center h-full gap-4 text-muted select-none">
+                  <svg width="88" height="88" viewBox="0 0 88 88" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <ellipse cx="44" cy="24" rx="28" ry="10" fill="var(--accent)" fillOpacity="0.1" stroke="var(--accent)" strokeWidth="1.5" strokeOpacity="0.35"/>
+                    <path d="M16 24v16c0 5.52 12.54 10 28 10s28-4.48 28-10V24" stroke="var(--accent)" strokeWidth="1.5" strokeOpacity="0.35" fill="none"/>
+                    <path d="M16 40v16c0 5.52 12.54 10 28 10s28-4.48 28-10V40" stroke="var(--accent)" strokeWidth="1.5" strokeOpacity="0.35" fill="none"/>
+                    <ellipse cx="44" cy="24" rx="28" ry="10" fill="none" stroke="var(--accent)" strokeWidth="1.5" strokeOpacity="0.55"/>
+                    <ellipse cx="44" cy="40" rx="28" ry="10" fill="none" stroke="var(--accent)" strokeWidth="1.5" strokeOpacity="0.25"/>
+                    <ellipse cx="44" cy="56" rx="28" ry="10" fill="none" stroke="var(--accent)" strokeWidth="1.5" strokeOpacity="0.15"/>
+                  </svg>
+                  <div className="text-center">
+                    <h2 className="text-[15px] font-semibold text-fg mb-1">EasyDB Admin</h2>
+                    <p className="text-[13px]">Select a table from the sidebar, or use the SQL Query tab.</p>
+                  </div>
+                </div>
+              )
+            ) : tab === 'query' ? (
+              <QueryTab
+                databases={databases}
+                defaultDb={selectedDb}
+                defaultTable={selectedTable}
+              />
+            ) : tab === 'backups' ? (
+              <BackupsTab
+                databases={databases}
+                selectedDb={selectedDb}
+                onRefresh={backupRefresh}
+              />
+            ) : (
+              <DbInfoTab databases={databases} selectedDb={selectedDb} onDeleteDb={handleDeleteDb} />
+            )}
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>
