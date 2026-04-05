@@ -17,7 +17,7 @@ A lightweight HTTP server that exposes SQLite databases as a RESTful API. One se
 
 ```bash
 # 1. Build
-go build -o easydb
+go build -o easydb ./cmd/easydb/
 
 # 2. Run
 ./easydb
@@ -240,20 +240,22 @@ Disable the UI in production by setting `ADMIN_ENABLED=false`.
 
 ```
 go-easydb/
-├── go.mod               # Module definition (single dependency: modernc.org/sqlite)
-├── main.go              # Entry point, CLI flags, signal handling
-├── config.go            # Environment variable configuration
-├── server.go            # HTTP server, routing, middleware, embedded index.html
-├── db_manager.go        # Database registry, connection pooling
-├── databases.go         # Database registration handlers
-├── tables.go            # Table schema + row CRUD handlers
-├── query.go             # Raw SQL execution handler
-├── backup_manager.go    # Backup create, restore, rotate, schedule
-├── backups_handler.go   # Backup HTTP handlers
-├── storage.go           # LocalStorage backup backend
-├── helpers.go           # Shared utilities
-├── docs.go              # OpenAPI spec + Swagger UI
-└── index.html           # Self-contained admin UI (React + Tailwind + CodeMirror)
+├── go.mod
+├── go.sum
+└── cmd/easydb/
+    ├── main.go              # Entry point, CLI flags, signal handling
+    ├── config.go            # Environment variable configuration
+    ├── server.go            # HTTP server, routing, middleware, embedded index.html
+    ├── db_manager.go        # Database registry, connection pooling
+    ├── databases.go         # Database registration handlers
+    ├── tables.go            # Table schema + row CRUD handlers
+    ├── query.go             # Raw SQL execution handler
+    ├── backup_manager.go    # Backup create, restore, rotate, schedule
+    ├── backups_handler.go   # Backup HTTP handlers
+    ├── storage.go           # LocalStorage backup backend
+    ├── helpers.go           # Shared utilities
+    ├── docs.go              # OpenAPI spec + Swagger UI
+    └── index.html           # Self-contained admin UI (React + Tailwind + CodeMirror)
 ```
 
 ## Security notes

@@ -11,26 +11,29 @@ A lightweight HTTP server that exposes SQLite databases as a RESTful API. One se
 ## Project structure
 ```
 go-easydb/
-├── main.go               # Entry point, CLI flags, signal handling
-├── config.go             # Environment variable configuration
-├── server.go             # HTTP server, route setup, middleware, //go:embed index.html
-├── db_manager.go         # Database registry, connection pooling, quoteID()
-├── databases.go          # /api/databases handlers
-├── tables.go             # /api/databases/{db}/tables + row CRUD handlers
-├── query.go              # /api/databases/{db}/query — raw SQL handler
-├── backup_manager.go     # Backup lifecycle: create, restore, rotate, schedule
-├── backups_handler.go    # /api/databases/{db}/backups HTTP handlers
-├── storage.go            # LocalStorage backup backend
-├── helpers.go            # Shared utilities: quoteID, writeJSON, scanRows, queryParam
-├── docs.go               # OpenAPI spec generation + Swagger UI handler
-└── index.html            # Self-contained admin UI (React + Tailwind + CodeMirror)
+├── go.mod
+├── go.sum
+└── cmd/easydb/
+    ├── main.go               # Entry point, CLI flags, signal handling
+    ├── config.go             # Environment variable configuration
+    ├── server.go             # HTTP server, route setup, middleware, //go:embed index.html
+    ├── db_manager.go         # Database registry, connection pooling, quoteID()
+    ├── databases.go          # /api/databases handlers
+    ├── tables.go             # /api/databases/{db}/tables + row CRUD handlers
+    ├── query.go              # /api/databases/{db}/query — raw SQL handler
+    ├── backup_manager.go     # Backup lifecycle: create, restore, rotate, schedule
+    ├── backups_handler.go    # /api/databases/{db}/backups HTTP handlers
+    ├── storage.go            # LocalStorage backup backend
+    ├── helpers.go            # Shared utilities: quoteID, writeJSON, scanRows, queryParam
+    ├── docs.go               # OpenAPI spec generation + Swagger UI handler
+    └── index.html            # Self-contained admin UI (React + Tailwind + CodeMirror)
 ```
 
 ## How to run
 ```bash
-go build -o easydb        # build binary
-./easydb                  # starts server on 127.0.0.1:8000
-./easydb --db path/to/file  # start and auto-register a SQLite file
+go build -o easydb ./cmd/easydb/   # build binary
+./easydb                           # starts server on 127.0.0.1:8000
+./easydb --db path/to/file         # start and auto-register a SQLite file
 ./easydb --host 0.0.0.0 --port 3000
 ```
 
