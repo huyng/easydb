@@ -1685,12 +1685,12 @@ function App() {
           </div>
         )}
         {devMode && (
-          <div className="flex items-center gap-1 px-2.5 py-[3px] rounded-md bg-[#ff98001a] border border-[#ff980044] text-[#ffb74d] text-[11px] font-semibold shrink-0 cursor-default" title="No API key configured — anyone can access this server">
-            DEV MODE
+          <div className="flex items-center gap-1 px-2.5 py-[3px] rounded-md bg-[#ff98001a] border border-[#ff980044] text-[#ffb74d] text-[11px] font-semibold shrink-0 cursor-default" title="No API KEY configured — anyone can access this server">
+          Open-Access Mode
           </div>
         )}
         <button className="px-2 py-[5px] rounded-md border border-white/15 bg-white/7 text-white/80 text-sm cursor-pointer whitespace-nowrap hover:bg-white/12 leading-none" onClick={() => setDarkMode(d => !d)} title={darkMode ? 'Switch to light mode' : 'Switch to dark mode'}>{darkMode ? '☀' : '☾'}</button>
-        <a className="px-3 py-[5px] rounded-md border border-white/15 bg-white/7 text-white/80 text-xs cursor-pointer whitespace-nowrap no-underline hover:bg-white/12" href={`${serverUrl}/docs`} target="_blank" rel="noreferrer">API Docs ↗</a>
+        <a className="px-3 py-[5px] rounded-md border border-white/15 bg-white/7 text-white/80 text-xs cursor-pointer whitespace-nowrap no-underline hover:bg-white/12" href={`${serverUrl}/docs/api`} rel="noreferrer">API Docs ↗</a>
         <button className="p-[7px] rounded-md border border-white/15 bg-white/7 text-white/80 cursor-pointer hover:bg-white/12" onClick={() => setShowAuth(true)} title="Change connection">
           <svg width="14" height="14" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
             <line x1="5" y1="1.5" x2="5" y2="5.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>

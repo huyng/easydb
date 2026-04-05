@@ -179,19 +179,17 @@
 <div class="wrap" style="padding-top:72px;padding-bottom:72px;border-bottom:1px solid var(--edge)">
   <div class="flex items-center gap-2 mb-5 flex-wrap">
     <span class="font-mono text-xs px-2 py-0.5 rounded" style="background:var(--surface);border:1px solid var(--edge);color:var(--muted)">Go 1.22+</span>
-    <span class="font-mono text-xs px-2 py-0.5 rounded" style="background:var(--surface);border:1px solid var(--edge);color:var(--muted)">stdlib net/http</span>
-    <span class="font-mono text-xs px-2 py-0.5 rounded" style="background:var(--surface);border:1px solid var(--edge);color:var(--muted)">modernc.org/sqlite</span>
     <span class="font-mono text-xs px-2 py-0.5 rounded" style="background:var(--accent-bg);border:1px solid var(--accent-border);color:var(--accent)">single binary</span>
   </div>
 
   <h1 class="font-bold mb-4" style="font-size:clamp(28px,5vw,44px);letter-spacing:-0.8px;line-height:1.15;color:var(--fg)">
-    A REST API for your<br>
+    Explore and serve your<br>
     <span style="color:var(--accent)">SQLite databases.</span>
   </h1>
-  <p class="mb-8" style="font-size:15px;color:var(--muted);max-width:520px;line-height:1.65">
-    EasyDB is a single Go binary that serves any SQLite file over HTTP —
-    auto-generated CRUD endpoints, raw SQL, scheduled backups, and a browser UI.
-    Clone, build, run.
+  <p class="mb-8" style="font-size:15px;color:var(--muted);max-width:540px;line-height:1.65">
+    EasyDB is a small, fast, self-contained Go binary that serves SQLite databases over a <strong style="color:var(--fg);font-weight:500">REST API</strong>
+    and lets you explore SQLite databases using <strong style="color:var(--fg);font-weight:500">simple browser UI</strong>.
+    Auto-generated CRUD endpoints, scheduled backups, raw SQL, and a browser UI.
   </p>
 
   <div class="flex gap-3 mb-10 flex-wrap">
@@ -247,9 +245,11 @@ mydata/tables/users/rows
 <!-- ── Screenshot ── -->
 <div style="border-bottom:1px solid var(--edge);background:var(--surface)">
   <div class="wrap" style="padding-top:48px;padding-bottom:0">
-    <p class="text-xs font-semibold uppercase tracking-widest mb-3" style="color:var(--muted)">Admin UI</p>
-    <p class="mb-6" style="font-size:14px;color:var(--muted);max-width:480px;line-height:1.6">
-      A full browser interface is built in — browse and edit rows, run SQL with syntax highlighting, and manage backups without leaving the tab.
+    <p class="text-xs font-semibold uppercase tracking-widest mb-3" style="color:var(--muted)">Built-in admin UI</p>
+    <p class="mb-6" style="font-size:14px;color:var(--muted);max-width:540px;line-height:1.6">
+      Whether you're digging through a local database or running EasyDB as a service,
+      the admin UI is always there. Browse tables, edit rows, run SQL with syntax highlighting,
+      and manage backups — all without leaving the browser.
     </p>
     <!-- Browser chrome wrapper -->
     <div style="border:1px solid var(--edge);border-bottom:none;border-radius:8px 8px 0 0;overflow:hidden;box-shadow:0 -8px 32px rgba(0,0,0,0.3)">
@@ -275,28 +275,28 @@ mydata/tables/users/rows
   <div class="wrap">
     <div class="feature-strip">
       <div class="feat">
+        <div class="feat-name" style="color:var(--accent)">Table browser</div>
+        <div class="feat-desc">Paginated, sortable view of any table. Insert, edit, and delete rows without writing SQL.</div>
+      </div>
+      <div class="feat">
+        <div class="feat-name" style="color:var(--accent)">SQL editor</div>
+        <div class="feat-desc">Write and run ad-hoc queries in the browser with syntax highlighting and instant results.</div>
+      </div>
+      <div class="feat">
+        <div class="feat-name" style="color:var(--accent)">Auto CRUD endpoints</div>
+        <div class="feat-desc">Every table gets GET, POST, PUT, and DELETE endpoints automatically. No code required.</div>
+      </div>
+      <div class="feat">
+        <div class="feat-name" style="color:var(--accent)">Raw SQL over HTTP</div>
+        <div class="feat-desc">POST parameterised queries from your app. Works alongside the CRUD endpoints.</div>
+      </div>
+      <div class="feat">
         <div class="feat-name">Multi-database</div>
-        <div class="feat-desc">Register and switch between multiple SQLite files at runtime.</div>
-      </div>
-      <div class="feat">
-        <div class="feat-name">Auto CRUD</div>
-        <div class="feat-desc">GET, POST, PUT, DELETE for every table — no code required.</div>
-      </div>
-      <div class="feat">
-        <div class="feat-name">Raw SQL</div>
-        <div class="feat-desc">POST any parameterised query. SELECT returns rows; DML returns rowcount.</div>
+        <div class="feat-desc">Register multiple SQLite files and switch between them in the UI or via the API.</div>
       </div>
       <div class="feat">
         <div class="feat-name">Backups</div>
-        <div class="feat-desc">On-demand or scheduled via <code>VACUUM INTO</code>. Auto-rotation, one-click restore.</div>
-      </div>
-      <div class="feat">
-        <div class="feat-name">Admin UI</div>
-        <div class="feat-desc">Embedded browser interface — browse tables, run SQL, manage backups.</div>
-      </div>
-      <div class="feat">
-        <div class="feat-name">Auth + CORS</div>
-        <div class="feat-desc"><code>X-API-Key</code> header auth. Multiple keys. Configurable CORS origins.</div>
+        <div class="feat-desc">On-demand or scheduled snapshots via <code>VACUUM INTO</code>. Auto-rotation, one-click restore.</div>
       </div>
     </div>
   </div>
