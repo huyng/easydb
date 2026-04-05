@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"io"
 	"log/slog"
 	"net/http"
 	"os"
@@ -16,11 +17,19 @@ import (
 type BackupManager struct {
 	cfg *Config
 	dbm *DBManager
-	st  *LocalStorage
+	st  StorageBackend
 }
 
 func newBackupManager(cfg *Config, dbm *DBManager) (*BackupManager, error) {
-	st, err := newLocalStorage(cfg.BackupDir)
+	var (
+		st  StorageBackend
+		err error
+	)
+	if cfg.BackupS3Bucket != "" {
+		st, err = newS3Storage(cfg)
+	} else {
+		st, err = newLocalStorage(cfg.BackupDir)
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -38,33 +47,36 @@ func (b *BackupManager) CreateBackup(dbName string) (*BackupMeta, error) {
 	}
 
 	filename := backupFilename(dbName)
-	destPath := b.st.Path(filename)
 
-	// VACUUM INTO fails if the destination exists; remove a same-second duplicate.
-	os.Remove(destPath)
+	// VACUUM INTO requires a local path, so always write to a temp file first,
+	// then hand it to the storage backend (which may upload it to S3).
+	tmp, err := os.CreateTemp("", "easydb-backup-*.db")
+	if err != nil {
+		return nil, fmt.Errorf("create temp file: %w", err)
+	}
+	tmpPath := tmp.Name()
+	tmp.Close()
+	defer os.Remove(tmpPath)
 
-	// Use VACUUM INTO for an online, consistent backup.
 	db, err := b.dbm.openDB(dbName)
 	if err != nil {
 		return nil, err
 	}
-	if _, err := db.Exec("VACUUM INTO ?", destPath); err != nil {
+	if _, err := db.Exec("VACUUM INTO ?", tmpPath); err != nil {
 		return nil, fmt.Errorf("vacuum into: %w", err)
 	}
 
-	fi, err := os.Stat(destPath)
+	size, err := b.st.Put(filename, tmpPath)
 	if err != nil {
-		return nil, err
-	}
-
-	meta := &BackupMeta{
-		Filename:  filename,
-		SizeBytes: fi.Size(),
-		CreatedAt: createdAtFromFilename(filename),
+		return nil, fmt.Errorf("store backup: %w", err)
 	}
 
 	b.rotateBackups(dbName)
-	return meta, nil
+	return &BackupMeta{
+		Filename:  filename,
+		SizeBytes: size,
+		CreatedAt: createdAtFromFilename(filename),
+	}, nil
 }
 
 // ListBackups returns all backups for a database, newest first.
@@ -72,20 +84,20 @@ func (b *BackupManager) ListBackups(dbName string) ([]BackupMeta, error) {
 	return b.st.List(dbName + "_")
 }
 
-// BackupPath returns the local filesystem path for a backup file.
-// Returns 404 if not found or 400 if the filename is invalid.
-func (b *BackupManager) BackupPath(dbName, filename string) (string, error) {
+// StreamBackup writes a backup file to w. Returns 400 for invalid filenames
+// and 404 if the backup does not exist.
+func (b *BackupManager) StreamBackup(dbName, filename string, w io.Writer) error {
 	if !backupFilenameRe.MatchString(filename) {
-		return "", &httpError{http.StatusBadRequest, "invalid backup filename"}
+		return &httpError{http.StatusBadRequest, "invalid backup filename"}
 	}
 	ok, err := b.st.Exists(filename)
 	if err != nil {
-		return "", err
+		return err
 	}
 	if !ok {
-		return "", &httpError{http.StatusNotFound, "backup not found: " + filename}
+		return &httpError{http.StatusNotFound, "backup not found: " + filename}
 	}
-	return b.st.Path(filename), nil
+	return b.st.WriteTo(filename, w)
 }
 
 // RestoreBackup replaces the database file with the given backup.
@@ -155,17 +167,11 @@ func (b *BackupManager) BackupAll() ([]map[string]any, error) {
 		})
 	}
 
-	// Also back up registry.json
+	// Also back up registry.json via the storage backend.
 	regSrc := b.dbm.registryPath()
 	if _, err := os.Stat(regSrc); err == nil {
 		regFilename := backupFilename("registry")
-		regDest := b.st.Path(regFilename)
-		if _, err := copyFile(regSrc, regDest); err == nil {
-			fi, _ := os.Stat(regDest)
-			var size int64
-			if fi != nil {
-				size = fi.Size()
-			}
+		if size, err := b.st.Put(regFilename, regSrc); err == nil {
 			results = append(results, map[string]any{
 				"database":   "registry",
 				"filename":   regFilename,

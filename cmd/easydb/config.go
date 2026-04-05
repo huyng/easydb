@@ -8,16 +8,20 @@ import (
 
 // Config holds all server configuration, sourced from environment variables.
 type Config struct {
-	Host           string
-	Port           string
-	DataDir        string
-	APIKeys        []string
-	AdminEnabled   bool
-	CORSOrigins    []string
-	BackupDir      string
-	BackupMax      int
-	BackupSchedule string
-	InitialDB      string
+	Host            string
+	Port            string
+	DataDir         string
+	APIKeys         []string
+	AdminEnabled    bool
+	CORSOrigins     []string
+	BackupDir       string
+	BackupMax       int
+	BackupSchedule  string
+	InitialDB       string
+	BackupS3Bucket  string // BACKUP_S3_BUCKET — enables S3 backend when non-empty
+	BackupS3Prefix  string // BACKUP_S3_PREFIX  (default: "easydb-backups/")
+	BackupS3Region  string // AWS_REGION
+	BackupS3Endpoint string // BACKUP_S3_ENDPOINT — optional, for MinIO / Cloudflare R2
 }
 
 func loadConfig() *Config {
@@ -58,6 +62,12 @@ func loadConfig() *Config {
 			cfg.BackupMax = n
 		}
 	}
+
+	// S3 backup backend
+	cfg.BackupS3Bucket   = os.Getenv("BACKUP_S3_BUCKET")
+	cfg.BackupS3Prefix   = getenv("BACKUP_S3_PREFIX", "easydb-backups/")
+	cfg.BackupS3Region   = getenv("AWS_REGION", "us-east-1")
+	cfg.BackupS3Endpoint = os.Getenv("BACKUP_S3_ENDPOINT")
 
 	return cfg
 }

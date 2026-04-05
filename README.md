@@ -63,6 +63,10 @@ All configuration is via environment variables (or a `.env` file). CLI flags tak
 | `BACKUP_MAX_COUNT` | `5` | Maximum backups per database before oldest are auto-deleted. |
 | `BACKUP_SCHEDULE` | _(none)_ | Automatic backup interval, e.g. `30m`, `6h`, `1d`. Disabled if unset. |
 | `EASYDB_OPEN` | _(none)_ | SQLite file to auto-register on startup (equivalent to `--db`). |
+| `BACKUP_S3_BUCKET` | _(none)_ | S3 bucket name. Setting this switches the backup backend to S3. |
+| `BACKUP_S3_PREFIX` | `easydb-backups/` | Key prefix for objects stored in S3. |
+| `AWS_REGION` | `us-east-1` | AWS region. |
+| `BACKUP_S3_ENDPOINT` | _(none)_ | Custom S3 endpoint URL for MinIO, Cloudflare R2, etc. |
 
 ### CLI flags
 

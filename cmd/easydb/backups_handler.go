@@ -42,13 +42,11 @@ func (s *Server) listBackups(w http.ResponseWriter, r *http.Request) {
 func (s *Server) downloadBackup(w http.ResponseWriter, r *http.Request) {
 	dbName := r.PathValue("db")
 	filename := r.PathValue("filename")
-	path, err := s.bkm.BackupPath(dbName, filename)
-	if handleErr(w, err) {
-		return
-	}
 	w.Header().Set("Content-Type", "application/x-sqlite3")
 	w.Header().Set("Content-Disposition", `attachment; filename="`+filename+`"`)
-	http.ServeFile(w, r, path)
+	if err := s.bkm.StreamBackup(dbName, filename, w); handleErr(w, err) {
+		return
+	}
 }
 
 func (s *Server) restoreBackup(w http.ResponseWriter, r *http.Request) {

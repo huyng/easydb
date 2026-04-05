@@ -453,6 +453,10 @@ tables/users/rows\
           <tr><td>BACKUP_MAX_COUNT</td><td>5</td><td>Max backups per database before rotation.</td></tr>
           <tr><td>BACKUP_SCHEDULE</td><td>—</td><td>Auto-backup interval: <code>30s</code> · <code>5m</code> · <code>6h</code> · <code>1d</code></td></tr>
           <tr><td>EASYDB_OPEN</td><td>—</td><td>SQLite file to register on startup (same as <code>--db</code>).</td></tr>
+          <tr><td>BACKUP_S3_BUCKET</td><td>—</td><td>S3 bucket name. Setting this switches the backup backend from local filesystem to S3.</td></tr>
+          <tr><td>BACKUP_S3_PREFIX</td><td>easydb-backups/</td><td>Key prefix for objects stored in the bucket.</td></tr>
+          <tr><td>AWS_REGION</td><td>us-east-1</td><td>AWS region.</td></tr>
+          <tr><td>BACKUP_S3_ENDPOINT</td><td>—</td><td>Custom endpoint for S3-compatible services (MinIO, Cloudflare R2, etc.).</td></tr>
         </tbody>
       </table>
     </div>
