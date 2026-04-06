@@ -36,10 +36,6 @@ func main() {
 		cfg.InitialDB = *dbPath
 	}
 
-	if len(cfg.APIKeys) == 0 {
-		slog.Warn("no API keys configured — running in dev mode (no authentication)")
-	}
-
 	if err := os.MkdirAll(cfg.DataDir, 0755); err != nil {
 		slog.Error("create data dir", "err", err)
 		os.Exit(1)
@@ -80,7 +76,7 @@ func main() {
 		IdleTimeout:  120 * time.Second,
 	}
 
-	slog.Info("easydb started", "addr", "http://"+addr, "admin", cfg.AdminEnabled)
+	printBanner(cfg, dbm)
 	go func() {
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			slog.Error("server error", "err", err)

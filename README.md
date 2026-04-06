@@ -53,7 +53,7 @@ All configuration is via environment variables (or a `.env` file). CLI flags tak
 
 | Variable | Default | Description |
 |---|---|---|
-| `API_KEYS` | _(none)_ | Comma-separated API keys. If unset, server runs in open-access dev mode. |
+| `API_KEYS` | _(none)_ | Comma-separated API keys. If unset, server runs in open-access mode (no authentication). |
 | `DATA_DIR` | `data` | Directory where databases and the registry are stored. |
 | `ADMIN_ENABLED` | `true` | Set to `false` to disable the admin UI. |
 | `CORS_ORIGINS` | `*` | Comma-separated allowed origins. Use specific origins in production. |
@@ -87,7 +87,7 @@ curl -H "X-API-Key: your-secret-key" http://localhost:8000/api/databases
 
 Multiple keys are supported — set `API_KEYS=key1,key2,key3`. Any valid key grants full access.
 
-When `API_KEYS` is not set, the server runs in dev mode with no authentication required.
+When `API_KEYS` is not set, the server runs in open-access mode with no authentication required.
 
 ## API reference
 
