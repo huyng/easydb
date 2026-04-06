@@ -3,7 +3,7 @@ package main
 import (
 	"log/slog"
 	"net/http"
-	"strings"
+"strings"
 
 	_ "embed"
 )

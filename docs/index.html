@@ -334,7 +334,7 @@ easydb --db ./mydata.db</pre>
   <div class="wrap">
     <div class="section-label">API reference</div>
     <h2 class="section-title">Everything you need.</h2>
-    <p class="section-sub">All endpoints require an <code>X-API-Key</code> header when <code>API_KEYS</code> is set. Responses are JSON.</p>
+    <p class="section-sub">All endpoints require an <code>X-API-Key</code> header when <code>EASYDB_API_KEYS</code> is set. Responses are JSON.</p>
 
     <!-- Databases -->
     <p class="text-xs font-semibold uppercase tracking-widest mb-3 mt-8" style="color:var(--muted)">Databases</p>
@@ -425,8 +425,8 @@ tables/users/rows\
 
     <div class="callout">
       Backups use <strong>VACUUM INTO</strong> — a consistent online snapshot that doesn't block reads or writes.
-      Set <code>BACKUP_SCHEDULE=6h</code> (or <code>30m</code>, <code>1d</code>) for automatic snapshots.
-      Oldest backups are deleted when <code>BACKUP_MAX_COUNT</code> is exceeded.
+      Set <code>EASYDB_BACKUP_SCHEDULE=6h</code> (or <code>30m</code>, <code>1d</code>) for automatic snapshots.
+      Oldest backups are deleted when <code>EASYDB_BACKUP_MAX_COUNT</code> is exceeded.
     </div>
   </div>
 </div>
@@ -442,20 +442,20 @@ tables/users/rows\
       <table class="cfg">
         <thead><tr><th>Variable</th><th>Default</th><th>Description</th></tr></thead>
         <tbody>
-          <tr><td>API_KEYS</td><td>—</td><td>Comma-separated keys. Unset = open-access mode (no auth).</td></tr>
-          <tr><td>DATA_DIR</td><td>data</td><td>Root dir for databases and registry.</td></tr>
-          <tr><td>HOST</td><td>127.0.0.1</td><td>Bind address.</td></tr>
-          <tr><td>PORT</td><td>8000</td><td>Port number.</td></tr>
-          <tr><td>ADMIN_ENABLED</td><td>true</td><td>Set <code>false</code> to disable the admin UI.</td></tr>
-          <tr><td>CORS_ORIGINS</td><td>*</td><td>Comma-separated allowed origins.</td></tr>
-          <tr><td>BACKUP_DIR</td><td>data/backups</td><td>Where backup files are stored.</td></tr>
-          <tr><td>BACKUP_MAX_COUNT</td><td>5</td><td>Max backups per database before rotation.</td></tr>
-          <tr><td>BACKUP_SCHEDULE</td><td>—</td><td>Auto-backup interval: <code>30s</code> · <code>5m</code> · <code>6h</code> · <code>1d</code></td></tr>
+          <tr><td>EASYDB_API_KEYS</td><td>—</td><td>Comma-separated keys. Unset = open-access mode (no auth).</td></tr>
+          <tr><td>EASYDB_DATA_DIR</td><td>data</td><td>Root dir for databases and registry.</td></tr>
+          <tr><td>EASYDB_HOST</td><td>127.0.0.1</td><td>Bind address.</td></tr>
+          <tr><td>EASYDB_PORT</td><td>8000</td><td>Port number.</td></tr>
+          <tr><td>EASYDB_ADMIN_ENABLED</td><td>true</td><td>Set <code>false</code> to disable the admin UI.</td></tr>
+          <tr><td>EASYDB_CORS_ORIGINS</td><td>*</td><td>Comma-separated allowed origins.</td></tr>
+          <tr><td>EASYDB_BACKUP_DIR</td><td>data/backups</td><td>Where backup files are stored.</td></tr>
+          <tr><td>EASYDB_BACKUP_MAX_COUNT</td><td>5</td><td>Max backups per database before rotation.</td></tr>
+          <tr><td>EASYDB_BACKUP_SCHEDULE</td><td>—</td><td>Auto-backup interval: <code>30s</code> · <code>5m</code> · <code>6h</code> · <code>1d</code></td></tr>
           <tr><td>EASYDB_OPEN</td><td>—</td><td>SQLite file to register on startup (same as <code>--db</code>).</td></tr>
-          <tr><td>BACKUP_S3_BUCKET</td><td>—</td><td>S3 bucket name. Setting this switches the backup backend from local filesystem to S3.</td></tr>
-          <tr><td>BACKUP_S3_PREFIX</td><td>easydb-backups/</td><td>Key prefix for objects stored in the bucket.</td></tr>
-          <tr><td>AWS_REGION</td><td>us-east-1</td><td>AWS region.</td></tr>
-          <tr><td>BACKUP_S3_ENDPOINT</td><td>—</td><td>Custom endpoint for S3-compatible services (MinIO, Cloudflare R2, etc.).</td></tr>
+          <tr><td>EASYDB_S3_BUCKET</td><td>—</td><td>S3 bucket name. Setting this switches the backup backend from local filesystem to S3.</td></tr>
+          <tr><td>EASYDB_S3_PREFIX</td><td>easydb-backups/</td><td>Key prefix for objects stored in the bucket.</td></tr>
+          <tr><td>EASYDB_S3_REGION</td><td>us-east-1</td><td>AWS region.</td></tr>
+          <tr><td>EASYDB_S3_ENDPOINT</td><td>—</td><td>Custom endpoint for S3-compatible services (MinIO, Cloudflare R2, etc.).</td></tr>
         </tbody>
       </table>
     </div>
@@ -463,9 +463,9 @@ tables/users/rows\
     <div class="cb">
       <div class="cb-head"><span class="cb-lang">CLI flags</span></div>
       <pre><span class="fl">--db</span>         string   register a SQLite file on startup
-<span class="fl">--host</span>       string   bind address        (overrides HOST)
-<span class="fl">--port</span>       string   port number          (overrides PORT)
-<span class="fl">--data-dir</span>   string   data directory       (overrides DATA_DIR)</pre>
+<span class="fl">--host</span>       string   bind address        (overrides EASYDB_HOST)
+<span class="fl">--port</span>       string   port number          (overrides EASYDB_PORT)
+<span class="fl">--data-dir</span>   string   data directory       (overrides EASYDB_DATA_DIR)</pre>
     </div>
   </div>
 </div>

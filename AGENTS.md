@@ -49,7 +49,7 @@ go build -o easydb ./cmd/easydb/   # build binary
 - Router uses Go 1.22+ `http.ServeMux` pattern syntax (`GET /path/{param}`)
 
 ## Configuration
-All via environment variables or `.env` file: `API_KEYS`, `DATA_DIR`, `ADMIN_ENABLED`, `CORS_ORIGINS`, `HOST`, `PORT`, `BACKUP_DIR`, `BACKUP_MAX_COUNT`, `BACKUP_SCHEDULE`, `EASYDB_OPEN`
+All via environment variables or `.env` file. All variables are prefixed with `EASYDB_`: `EASYDB_API_KEYS`, `EASYDB_DATA_DIR`, `EASYDB_ADMIN_ENABLED`, `EASYDB_CORS_ORIGINS`, `EASYDB_HOST`, `EASYDB_PORT`, `EASYDB_BACKUP_DIR`, `EASYDB_BACKUP_MAX_COUNT`, `EASYDB_BACKUP_SCHEDULE`, `EASYDB_OPEN`, `EASYDB_S3_BUCKET`, `EASYDB_S3_PREFIX`, `EASYDB_S3_REGION`, `EASYDB_S3_ENDPOINT`
 
 ## CLI
 All args are flags (no positional arguments). Flags: `--db`, `--host`, `--port`, `--data-dir`

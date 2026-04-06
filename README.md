@@ -53,20 +53,20 @@ All configuration is via environment variables (or a `.env` file). CLI flags tak
 
 | Variable | Default | Description |
 |---|---|---|
-| `API_KEYS` | _(none)_ | Comma-separated API keys. If unset, server runs in open-access mode (no authentication). |
-| `DATA_DIR` | `data` | Directory where databases and the registry are stored. |
-| `ADMIN_ENABLED` | `true` | Set to `false` to disable the admin UI. |
-| `CORS_ORIGINS` | `*` | Comma-separated allowed origins. Use specific origins in production. |
-| `HOST` | `127.0.0.1` | Bind address. |
-| `PORT` | `8000` | Port. |
-| `BACKUP_DIR` | `data/backups` | Directory for backup files. |
-| `BACKUP_MAX_COUNT` | `5` | Maximum backups per database before oldest are auto-deleted. |
-| `BACKUP_SCHEDULE` | _(none)_ | Automatic backup interval, e.g. `30m`, `6h`, `1d`. Disabled if unset. |
+| `EASYDB_API_KEYS` | _(none)_ | Comma-separated API keys. If unset, server runs in open-access mode (no authentication). |
+| `EASYDB_DATA_DIR` | `data` | Directory where databases and the registry are stored. |
+| `EASYDB_ADMIN_ENABLED` | `true` | Set to `false` to disable the admin UI. |
+| `EASYDB_CORS_ORIGINS` | `*` | Comma-separated allowed origins. Use specific origins in production. |
+| `EASYDB_HOST` | `127.0.0.1` | Bind address. |
+| `EASYDB_PORT` | `8000` | Port. |
+| `EASYDB_BACKUP_DIR` | `data/backups` | Directory for backup files. |
+| `EASYDB_BACKUP_MAX_COUNT` | `5` | Maximum backups per database before oldest are auto-deleted. |
+| `EASYDB_BACKUP_SCHEDULE` | _(none)_ | Automatic backup interval, e.g. `30m`, `6h`, `1d`. Disabled if unset. |
 | `EASYDB_OPEN` | _(none)_ | SQLite file to auto-register on startup (equivalent to `--db`). |
-| `BACKUP_S3_BUCKET` | _(none)_ | S3 bucket name. Setting this switches the backup backend to S3. |
-| `BACKUP_S3_PREFIX` | `easydb-backups/` | Key prefix for objects stored in S3. |
-| `AWS_REGION` | `us-east-1` | AWS region. |
-| `BACKUP_S3_ENDPOINT` | _(none)_ | Custom S3 endpoint URL for MinIO, Cloudflare R2, etc. |
+| `EASYDB_S3_BUCKET` | _(none)_ | S3 bucket name. Setting this switches the backup backend to S3. |
+| `EASYDB_S3_PREFIX` | `easydb-backups/` | Key prefix for objects stored in S3. |
+| `EASYDB_S3_REGION` | `us-east-1` | AWS region. |
+| `EASYDB_S3_ENDPOINT` | _(none)_ | Custom S3 endpoint URL for MinIO, Cloudflare R2, etc. |
 
 ### CLI flags
 
@@ -85,9 +85,9 @@ All API endpoints require an `X-API-Key` header:
 curl -H "X-API-Key: your-secret-key" http://localhost:8000/api/databases
 ```
 
-Multiple keys are supported — set `API_KEYS=key1,key2,key3`. Any valid key grants full access.
+Multiple keys are supported — set `EASYDB_API_KEYS=key1,key2,key3`. Any valid key grants full access.
 
-When `API_KEYS` is not set, the server runs in open-access mode with no authentication required.
+When `EASYDB_API_KEYS` is not set, the server runs in open-access mode with no authentication required.
 
 ## API reference
 
@@ -230,17 +230,17 @@ curl -X POST -H "X-API-Key: $KEY" \
 
 #### Scheduled backups
 
-Set `BACKUP_SCHEDULE` to automatically back up all databases at a regular interval:
+Set `EASYDB_BACKUP_SCHEDULE` to automatically back up all databases at a regular interval:
 
 ```bash
-BACKUP_SCHEDULE=6h   # every 6 hours
-BACKUP_SCHEDULE=30m  # every 30 minutes
-BACKUP_SCHEDULE=1d   # daily
+EASYDB_BACKUP_SCHEDULE=6h   # every 6 hours
+EASYDB_BACKUP_SCHEDULE=30m  # every 30 minutes
+EASYDB_BACKUP_SCHEDULE=1d   # daily
 ```
 
 #### Rotation
 
-When the number of backups for a database exceeds `BACKUP_MAX_COUNT`, the oldest are automatically deleted. This applies to both on-demand and scheduled backups.
+When the number of backups for a database exceeds `EASYDB_BACKUP_MAX_COUNT`, the oldest are automatically deleted. This applies to both on-demand and scheduled backups.
 
 ## Admin UI
 
@@ -254,7 +254,7 @@ Open `http://localhost:8000/admin/` in a browser. Enter your server URL and API 
 
 The API key is stored in `sessionStorage` only and cleared when the tab is closed.
 
-Disable the UI in production by setting `ADMIN_ENABLED=false`.
+Disable the UI in production by setting `EASYDB_ADMIN_ENABLED=false`.
 
 ## File layout
 
@@ -285,4 +285,4 @@ go-easydb/
 - **SSRF** — the import-from-URL endpoint validates the scheme and blocks private/loopback IP ranges.
 - **Concurrency** — WAL journal mode and a 5-second busy timeout are set on every connection.
 - **Result size** — raw SQL queries are capped at 10 000 rows to bound memory usage.
-- **CORS** — set `CORS_ORIGINS` to your specific frontend origin(s) in production rather than `*`.
+- **CORS** — set `EASYDB_CORS_ORIGINS` to your specific frontend origin(s) in production rather than `*`.
