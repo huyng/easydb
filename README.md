@@ -1,6 +1,6 @@
 # EasyDB
 
-EasyDB is a small, fast, self-contained Go binary that serves SQLite databases over a REST API and lets you explore SQLite databases using a simple browser UI. Auto-generated CRUD endpoints, scheduled backups, raw SQL, and a browser UI.
+EasyDB is a small, fast, self-contained Go binary that serves SQLite databases over a REST API and lets you explore SQLite databases using a simple browser UI. Auto-generated CRUD endpoints, built-in scheduled backups, raw SQL, and a browser UI.
 
 ## Install
 
@@ -58,7 +58,7 @@ Full interactive docs at `/docs/api`. Quick reference:
 **Databases**
 ```
 GET    /api/databases
-POST   /api/databases          {"name": "mydb"}
+POST   /api/databases
 DELETE /api/databases/{db}
 GET    /api/databases/{db}/info
 ```
