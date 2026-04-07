@@ -1,12 +1,12 @@
 # EasyDB
 
-A lightweight HTTP server that exposes SQLite databases as a RESTful API — with auto-generated CRUD endpoints, raw SQL queries, scheduled backups, and a browser-based admin UI.
+EasyDB is a small, fast, self-contained Go binary that serves SQLite databases over a REST API and lets you explore SQLite databases using a simple browser UI. Auto-generated CRUD endpoints, scheduled backups, raw SQL, and a browser UI.
 
 ## Install
 
 ```bash
-git clone https://github.com/your-org/go-easydb
-cd go-easydb
+git clone https://github.com/huyng/easydb
+cd easydb
 go build -o easydb ./cmd/easydb/
 ```
 
@@ -14,12 +14,10 @@ go build -o easydb ./cmd/easydb/
 
 ```bash
 ./easydb                          # starts on http://127.0.0.1:8000
-./easydb --db path/to/file.db    # auto-register a database on startup
+./easydb --db path/to/file.db     # auto-register a database on startup
 ./easydb --host 0.0.0.0 --port 3000
 ```
 
-Admin UI: `http://localhost:8000/admin/`
-API docs: `http://localhost:8000/docs/api`
 
 ## Configuration
 
@@ -69,14 +67,14 @@ GET    /api/databases/{db}/info
 ```
 GET    /api/databases/{db}/tables
 GET    /api/databases/{db}/tables/{table}/rows?limit=50&offset=0&order_by=id&order_dir=ASC
-POST   /api/databases/{db}/tables/{table}/rows   {"name": "Alice", "age": 30}
+POST   /api/databases/{db}/tables/{table}/rows
 PUT    /api/databases/{db}/tables/{table}/rows/{id}
 DELETE /api/databases/{db}/tables/{table}/rows/{id}
 ```
 
 **Raw SQL**
 ```
-POST   /api/databases/{db}/query   {"sql": "SELECT * FROM users WHERE age > ?", "params": [18]}
+POST   /api/databases/{db}/query
 ```
 Results capped at 10 000 rows.
 
