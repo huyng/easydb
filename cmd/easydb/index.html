@@ -558,10 +558,10 @@ function DataTable({ columns, rows, onSort, sortBy, sortDir, maxHeight, schema, 
               const isRowid = col === '_rowid_';
               return (
                 <th key={col}
-                  className={`relative px-3 py-[9px] bg-main text-left font-semibold border-b border-edge whitespace-nowrap select-none overflow-hidden ${isRowid ? 'text-muted italic cursor-default' : 'text-muted cursor-pointer t-hover-btn'}`}
-                  onClick={() => !isRowid && onSort?.(col)}>
+                  className={`relative px-3 py-[9px] bg-main text-left font-semibold border-b border-edge whitespace-nowrap select-none overflow-hidden ${isRowid ? 'text-muted italic cursor-pointer t-hover-btn' : 'text-muted cursor-pointer t-hover-btn'}`}
+                  onClick={() => onSort?.(col)}>
                   {isRowid ? 'rowid' : col}
-                  {!isRowid && sortBy === col && (
+                  {sortBy === col && (
                     <svg width="8" height="8" viewBox="0 0 8 8" fill="currentColor" className="inline ml-1 opacity-70">
                       {sortDir === 'ASC'
                         ? <path d="M4 1l3 5H1z"/>
@@ -869,7 +869,11 @@ function DbItem({ db, expanded, selectedDb, selectedTable, onToggle, onSelectTab
 // BrowseTab
 // ─────────────────────────────────────────────
 function BrowseTab({ db, table, schema, rows, total, limit, offset, orderBy, orderDir, loading, error, onSort, onPageChange, onLimitChange, onRowSaved }) {
-  const cols = rows.length > 0 ? Object.keys(rows[0]) : schema.map(c => c.name);
+  const schemaCols = schema.map(c => c.name);
+  const rowKeys = rows.length > 0 ? Object.keys(rows[0]) : [];
+  const extraCols = rowKeys.filter(k => k !== '_rowid_' && !schemaCols.includes(k));
+  const baseCols = schemaCols.length > 0 ? [...schemaCols, ...extraCols] : rowKeys.filter(k => k !== '_rowid_');
+  const cols = rowKeys.includes('_rowid_') ? ['_rowid_', ...baseCols] : baseCols;
   const totalPages = Math.max(1, Math.ceil(total / limit));
   const page = Math.floor(offset / limit);
   const start = total ? offset + 1 : 0;

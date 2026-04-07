@@ -142,11 +142,14 @@ func (s *Server) listRows(w http.ResponseWriter, r *http.Request) {
 	}
 	var orderClause string
 	if orderBy != "" {
-		if !columnExists(cols, orderBy) {
+		if orderBy == "_rowid_" {
+			orderClause = " ORDER BY rowid " + orderDir
+		} else if !columnExists(cols, orderBy) {
 			writeError(w, http.StatusBadRequest, "unknown column: "+orderBy)
 			return
+		} else {
+			orderClause = " ORDER BY " + quoteID(orderBy) + " " + orderDir
 		}
-		orderClause = " ORDER BY " + quoteID(orderBy) + " " + orderDir
 	}
 
 	// SELECT with rowid if no single-column PK
