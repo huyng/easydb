@@ -3,7 +3,7 @@ package main
 import (
 	"log/slog"
 	"net/http"
-"strings"
+	"strings"
 
 	_ "embed"
 )
@@ -235,6 +235,7 @@ func (s *Server) landingPage(w http.ResponseWriter, r *http.Request) {
   a { color: #3ecf8e; text-decoration: none; }
   a:hover { text-decoration: underline; }
 </style>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%23141414'/><ellipse cx='16' cy='11' rx='9' ry='4' fill='%233ecf8e'/><rect x='7' y='11' width='18' height='9' fill='%23141414'/><ellipse cx='16' cy='20' rx='9' ry='4' fill='%232a9d6a'/><rect x='7' y='20' width='18' height='4' fill='%23141414'/><ellipse cx='16' cy='24' rx='9' ry='4' fill='%231e7a50'/></svg>">
 </head>
 <body>
 <div class="container">
