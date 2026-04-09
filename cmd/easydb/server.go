@@ -62,6 +62,7 @@ func (s *Server) setupRoutes() {
 	// Rows — rowid variants must come before the generic {pk} wildcard
 	s.mux.Handle("GET /api/databases/{db}/tables/{table}/rows", auth(http.HandlerFunc(s.listRows)))
 	s.mux.Handle("POST /api/databases/{db}/tables/{table}/rows", auth(http.HandlerFunc(s.createRow)))
+	s.mux.Handle("GET /api/databases/{db}/tables/{table}/rows/rowid/{rowid}", auth(http.HandlerFunc(s.getRowByRowid)))
 	s.mux.Handle("PUT /api/databases/{db}/tables/{table}/rows/rowid/{rowid}", auth(http.HandlerFunc(s.updateRowByRowid)))
 	s.mux.Handle("DELETE /api/databases/{db}/tables/{table}/rows/rowid/{rowid}", auth(http.HandlerFunc(s.deleteRowByRowid)))
 	s.mux.Handle("GET /api/databases/{db}/tables/{table}/rows/{pk}", auth(http.HandlerFunc(s.getRow)))

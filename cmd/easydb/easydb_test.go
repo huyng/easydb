@@ -154,6 +154,49 @@ func TestDeleteRowByPK(t *testing.T) {
 	}
 }
 
+func TestGetRowByRowid(t *testing.T) {
+	srv, cleanup := newTestServer(t)
+	defer cleanup()
+	mustRegisterDB(t, srv, "testdb")
+
+	// Insert a row and capture its rowid from the response
+	rec := httptest.NewRecorder()
+	srv.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, "/api/databases/testdb/tables/items/rows",
+		bytes.NewBufferString(`{"id":10,"name":"dave"}`)))
+	if rec.Code != http.StatusCreated {
+		t.Fatalf("insert: got %d", rec.Code)
+	}
+	var inserted map[string]any
+	json.NewDecoder(rec.Body).Decode(&inserted)
+	rowid := fmt.Sprintf("%v", int64(inserted["lastrowid"].(float64)))
+
+	// GET by rowid
+	rec2 := httptest.NewRecorder()
+	srv.ServeHTTP(rec2, httptest.NewRequest(http.MethodGet,
+		"/api/databases/testdb/tables/items/rows/rowid/"+rowid, nil))
+	if rec2.Code != http.StatusOK {
+		t.Fatalf("get by rowid: got %d, body: %s", rec2.Code, rec2.Body)
+	}
+	var row map[string]any
+	json.NewDecoder(rec2.Body).Decode(&row)
+	if row["name"] != "dave" {
+		t.Errorf("expected name=dave, got %v", row["name"])
+	}
+}
+
+func TestGetRowByRowid_NotFound(t *testing.T) {
+	srv, cleanup := newTestServer(t)
+	defer cleanup()
+	mustRegisterDB(t, srv, "testdb")
+
+	rec := httptest.NewRecorder()
+	srv.ServeHTTP(rec, httptest.NewRequest(http.MethodGet,
+		"/api/databases/testdb/tables/items/rows/rowid/9999", nil))
+	if rec.Code != http.StatusNotFound {
+		t.Fatalf("expected 404, got %d", rec.Code)
+	}
+}
+
 // TestPKRouteDoesNotConflictWithRowid verifies the {pk} wildcard doesn't match
 // the literal "rowid" segment (which has its own dedicated routes).
 func TestPKRouteDoesNotConflictWithRowid(t *testing.T) {

@@ -284,6 +284,12 @@ func buildPaths() map[string]any {
 			},
 		},
 		"/api/databases/{db}/tables/{table}/rows/rowid/{rowid}": map[string]any{
+			"get": map[string]any{
+				"summary":    "Get row by SQLite rowid",
+				"tags":       []string{"Rows"},
+				"parameters": []any{dbParam, tableParam, rowidParam},
+				"responses":  json200("Row", map[string]any{"type": "object"}),
+			},
 			"put": map[string]any{
 				"summary":     "Update row by SQLite rowid",
 				"tags":        []string{"Rows"},

@@ -327,6 +327,41 @@ func (s *Server) updateRow(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]bool{"updated": true})
 }
 
+func (s *Server) getRowByRowid(w http.ResponseWriter, r *http.Request) {
+	dbName := r.PathValue("db")
+	table := r.PathValue("table")
+	rowid := r.PathValue("rowid")
+
+	db, err := s.dbm.openDB(dbName)
+	if handleErr(w, err) {
+		return
+	}
+	ok, err := tableExists(db, table)
+	if handleErr(w, err) {
+		return
+	}
+	if !ok {
+		writeError(w, http.StatusNotFound, "table not found: "+table)
+		return
+	}
+
+	rows, err := db.Query(fmt.Sprintf("SELECT * FROM %s WHERE rowid=?", quoteID(table)), rowid)
+	if handleErr(w, err) {
+		return
+	}
+	defer rows.Close()
+
+	result, err := scanRows(rows)
+	if handleErr(w, err) {
+		return
+	}
+	if len(result) == 0 {
+		writeError(w, http.StatusNotFound, "row not found")
+		return
+	}
+	writeJSON(w, http.StatusOK, result[0])
+}
+
 func (s *Server) updateRowByRowid(w http.ResponseWriter, r *http.Request) {
 	dbName := r.PathValue("db")
 	table := r.PathValue("table")
