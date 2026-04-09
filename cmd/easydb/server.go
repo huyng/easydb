@@ -59,14 +59,14 @@ func (s *Server) setupRoutes() {
 	s.mux.Handle("GET /api/databases/{db}/tables/{table}/schema", auth(http.HandlerFunc(s.tableSchema)))
 	s.mux.Handle("GET /api/databases/{db}/tables/{table}/ddl", auth(http.HandlerFunc(s.tableDDL)))
 
-	// Rows — rowid variants must come before the generic {row_id} wildcard
+	// Rows — rowid variants must come before the generic {pk} wildcard
 	s.mux.Handle("GET /api/databases/{db}/tables/{table}/rows", auth(http.HandlerFunc(s.listRows)))
 	s.mux.Handle("POST /api/databases/{db}/tables/{table}/rows", auth(http.HandlerFunc(s.createRow)))
 	s.mux.Handle("PUT /api/databases/{db}/tables/{table}/rows/rowid/{rowid}", auth(http.HandlerFunc(s.updateRowByRowid)))
 	s.mux.Handle("DELETE /api/databases/{db}/tables/{table}/rows/rowid/{rowid}", auth(http.HandlerFunc(s.deleteRowByRowid)))
-	s.mux.Handle("GET /api/databases/{db}/tables/{table}/rows/{row_id}", auth(http.HandlerFunc(s.getRow)))
-	s.mux.Handle("PUT /api/databases/{db}/tables/{table}/rows/{row_id}", auth(http.HandlerFunc(s.updateRow)))
-	s.mux.Handle("DELETE /api/databases/{db}/tables/{table}/rows/{row_id}", auth(http.HandlerFunc(s.deleteRow)))
+	s.mux.Handle("GET /api/databases/{db}/tables/{table}/rows/{pk}", auth(http.HandlerFunc(s.getRow)))
+	s.mux.Handle("PUT /api/databases/{db}/tables/{table}/rows/{pk}", auth(http.HandlerFunc(s.updateRow)))
+	s.mux.Handle("DELETE /api/databases/{db}/tables/{table}/rows/{pk}", auth(http.HandlerFunc(s.deleteRow)))
 
 	// Query
 	s.mux.Handle("POST /api/databases/{db}/query", auth(http.HandlerFunc(s.executeQuery)))

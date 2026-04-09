@@ -118,7 +118,7 @@ func buildPaths() map[string]any {
 	}
 	dbParam := param("db", "path", "Database name", true)
 	tableParam := param("table", "path", "Table name", true)
-	rowIDParam := param("row_id", "path", "Primary key value", true)
+	pkParam := param("pk", "path", "Primary key value", true)
 	rowidParam := param("rowid", "path", "SQLite implicit rowid", true)
 	filenameParam := param("filename", "path", "Backup filename", true)
 
@@ -262,24 +262,24 @@ func buildPaths() map[string]any {
 				"responses":   map[string]any{"201": map[string]any{"description": "Inserted", "content": map[string]any{"application/json": map[string]any{"schema": obj(map[string]any{"lastrowid": num})}}}},
 			},
 		},
-		"/api/databases/{db}/tables/{table}/rows/{row_id}": map[string]any{
+		"/api/databases/{db}/tables/{table}/rows/{pk}": map[string]any{
 			"get": map[string]any{
 				"summary":    "Get row by primary key",
 				"tags":       []string{"Rows"},
-				"parameters": []any{dbParam, tableParam, rowIDParam},
+				"parameters": []any{dbParam, tableParam, pkParam},
 				"responses":  json200("Row", map[string]any{"type": "object"}),
 			},
 			"put": map[string]any{
 				"summary":     "Update row by primary key",
 				"tags":        []string{"Rows"},
-				"parameters":  []any{dbParam, tableParam, rowIDParam},
+				"parameters":  []any{dbParam, tableParam, pkParam},
 				"requestBody": body(map[string]any{"type": "object"}),
 				"responses":   json200("Updated", obj(map[string]any{"updated": bol})),
 			},
 			"delete": map[string]any{
 				"summary":    "Delete row by primary key",
 				"tags":       []string{"Rows"},
-				"parameters": []any{dbParam, tableParam, rowIDParam},
+				"parameters": []any{dbParam, tableParam, pkParam},
 				"responses":  json200("Deleted", obj(map[string]any{"deleted": bol})),
 			},
 		},

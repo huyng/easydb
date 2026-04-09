@@ -229,7 +229,7 @@ func (s *Server) createRow(w http.ResponseWriter, r *http.Request) {
 func (s *Server) getRow(w http.ResponseWriter, r *http.Request) {
 	dbName := r.PathValue("db")
 	table := r.PathValue("table")
-	rowID := r.PathValue("row_id")
+	pkVal := r.PathValue("pk")
 
 	db, err := s.dbm.openDB(dbName)
 	if handleErr(w, err) {
@@ -255,7 +255,7 @@ func (s *Server) getRow(w http.ResponseWriter, r *http.Request) {
 
 	rows, err := db.Query(
 		fmt.Sprintf("SELECT * FROM %s WHERE %s=?", quoteID(table), quoteID(pk)),
-		rowID,
+		pkVal,
 	)
 	if handleErr(w, err) {
 		return
@@ -276,7 +276,7 @@ func (s *Server) getRow(w http.ResponseWriter, r *http.Request) {
 func (s *Server) updateRow(w http.ResponseWriter, r *http.Request) {
 	dbName := r.PathValue("db")
 	table := r.PathValue("table")
-	rowID := r.PathValue("row_id")
+	pkVal := r.PathValue("pk")
 
 	db, err := s.dbm.openDB(dbName)
 	if handleErr(w, err) {
@@ -320,7 +320,7 @@ func (s *Server) updateRow(w http.ResponseWriter, r *http.Request) {
 
 	sql := fmt.Sprintf("UPDATE %s SET %s WHERE %s=?",
 		quoteID(table), strings.Join(setParts, ","), quoteID(pk))
-	setVals = append(setVals, rowID)
+	setVals = append(setVals, pkVal)
 	if _, err := db.Exec(sql, setVals...); handleErr(w, err) {
 		return
 	}
@@ -372,7 +372,7 @@ func (s *Server) updateRowByRowid(w http.ResponseWriter, r *http.Request) {
 func (s *Server) deleteRow(w http.ResponseWriter, r *http.Request) {
 	dbName := r.PathValue("db")
 	table := r.PathValue("table")
-	rowID := r.PathValue("row_id")
+	pkVal := r.PathValue("pk")
 
 	db, err := s.dbm.openDB(dbName)
 	if handleErr(w, err) {
@@ -398,7 +398,7 @@ func (s *Server) deleteRow(w http.ResponseWriter, r *http.Request) {
 
 	res, err := db.Exec(
 		fmt.Sprintf("DELETE FROM %s WHERE %s=?", quoteID(table), quoteID(pk)),
-		rowID,
+		pkVal,
 	)
 	if handleErr(w, err) {
 		return
