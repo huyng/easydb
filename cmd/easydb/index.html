@@ -332,7 +332,7 @@ function RowModal({ columns, row, schema, db, table, onClose, onSaved, onDeleted
         <div className="flex items-center justify-between mb-4 shrink-0">
           <h2 className="text-base">Row details</h2>
           <div className="flex items-center gap-2">
-            {!editing && (
+            {!editing && table && (
               confirmDelete
                 ? <>
                     <span className="text-[13px] text-muted">Delete this row?</span>
@@ -1052,6 +1052,7 @@ function QueryTab({ databases, defaultDb, defaultTable }) {
           columns={resultCols}
           rows={result.rows}
           maxHeight="380px"
+          db={queryDb}
         />
       )}
 
