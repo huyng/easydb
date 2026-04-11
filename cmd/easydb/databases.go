@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"time"
 )
 
 // private IP ranges blocked for SSRF protection on URL import.
@@ -47,42 +48,66 @@ func (s *Server) registerDatabase(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) uploadDatabase(w http.ResponseWriter, r *http.Request) {
+	// Large uploads need more time than the server-wide 60s write deadline.
+	http.NewResponseController(w).SetWriteDeadline(time.Now().Add(5 * time.Minute))
+
 	// 500 MB limit
 	r.Body = http.MaxBytesReader(w, r.Body, 500<<20)
-	if err := r.ParseMultipartForm(32 << 20); err != nil {
+
+	// Use MultipartReader for true streaming — ParseMultipartForm buffers the
+	// entire body before returning, which doubles memory/disk usage.
+	mr, err := r.MultipartReader()
+	if err != nil {
 		writeError(w, http.StatusBadRequest, "parse multipart: "+err.Error())
 		return
 	}
 
-	name := r.FormValue("name")
+	name := r.URL.Query().Get("name")
 	if name == "" {
-		writeError(w, http.StatusBadRequest, "name query param required")
+		writeError(w, http.StatusBadRequest, "name query param is required")
 		return
 	}
 
-	file, _, err := r.FormFile("file")
-	if err != nil {
-		writeError(w, http.StatusBadRequest, "missing file field: "+err.Error())
-		return
-	}
-	defer file.Close()
+	var destPath string
+	var registered bool
 
-	destPath := filepath.Join(s.cfg.DataDir, name+".db")
-	if err := s.dbm.register(name, destPath); handleErr(w, err) {
-		return
+	for {
+		part, err := mr.NextPart()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			writeError(w, http.StatusBadRequest, "read multipart: "+err.Error())
+			return
+		}
+
+		if part.FormName() != "file" {
+			continue
+		}
+
+		destPath = filepath.Join(s.cfg.DataDir, name+".db")
+		if err := s.dbm.register(name, destPath); handleErr(w, err) {
+			return
+		}
+		registered = true
+
+		out, err := os.Create(destPath)
+		if err != nil {
+			s.dbm.unregister(name, false)
+			writeError(w, http.StatusInternalServerError, "create file: "+err.Error())
+			return
+		}
+		if _, err := io.Copy(out, part); err != nil {
+			out.Close()
+			s.dbm.unregister(name, true)
+			writeError(w, http.StatusInternalServerError, "write file: "+err.Error())
+			return
+		}
+		out.Close()
 	}
 
-	out, err := os.Create(destPath)
-	if err != nil {
-		s.dbm.unregister(name, false)
-		writeError(w, http.StatusInternalServerError, "create file: "+err.Error())
-		return
-	}
-	defer out.Close()
-
-	if _, err := io.Copy(out, file); err != nil {
-		s.dbm.unregister(name, true)
-		writeError(w, http.StatusInternalServerError, "write file: "+err.Error())
+	if !registered {
+		writeError(w, http.StatusBadRequest, "file field is required")
 		return
 	}
 	writeJSON(w, http.StatusCreated, map[string]string{"name": name, "path": destPath})

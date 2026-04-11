@@ -71,6 +71,7 @@ func (s *Server) setupRoutes() {
 
 	// Query
 	s.mux.Handle("POST /api/databases/{db}/query", auth(http.HandlerFunc(s.executeQuery)))
+	s.mux.Handle("POST /api/databases/{db}/transaction", auth(http.HandlerFunc(s.executeTransaction)))
 
 	// Backups
 	s.mux.Handle("POST /api/databases/{db}/backup", auth(http.HandlerFunc(s.createBackup)))

@@ -216,3 +216,77 @@ func TestPKRouteDoesNotConflictWithRowid(t *testing.T) {
 		t.Fatalf("rowid route not found — {pk} wildcard may have swallowed it")
 	}
 }
+
+func TestTransaction(t *testing.T) {
+	srv, cleanup := newTestServer(t)
+	defer cleanup()
+	mustRegisterDB(t, srv, "testdb")
+
+	body := `{"statements":[
+		{"sql":"INSERT INTO items (id, name) VALUES (?,?)", "params":[100,"tx-alice"]},
+		{"sql":"INSERT INTO items (id, name) VALUES (?,?)", "params":[101,"tx-bob"]}
+	]}`
+	rec := httptest.NewRecorder()
+	srv.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, "/api/databases/testdb/transaction",
+		bytes.NewBufferString(body)))
+	if rec.Code != http.StatusOK {
+		t.Fatalf("transaction: got %d, body: %s", rec.Code, rec.Body)
+	}
+
+	var resp map[string]any
+	json.NewDecoder(rec.Body).Decode(&resp)
+	results := resp["results"].([]any)
+	if len(results) != 2 {
+		t.Fatalf("expected 2 results, got %d", len(results))
+	}
+	for i, r := range results {
+		if r.(map[string]any)["rowcount"].(float64) != 1 {
+			t.Errorf("result %d: expected rowcount=1", i)
+		}
+	}
+
+	// Verify both rows exist
+	rec2 := httptest.NewRecorder()
+	srv.ServeHTTP(rec2, httptest.NewRequest(http.MethodGet, "/api/databases/testdb/tables/items/rows/100", nil))
+	if rec2.Code != http.StatusOK {
+		t.Errorf("row 100 not found after transaction")
+	}
+}
+
+func TestTransactionRollback(t *testing.T) {
+	srv, cleanup := newTestServer(t)
+	defer cleanup()
+	mustRegisterDB(t, srv, "testdb")
+
+	// Second statement references a non-existent table — should roll back the first insert.
+	body := `{"statements":[
+		{"sql":"INSERT INTO items (id, name) VALUES (?,?)", "params":[200,"should-rollback"]},
+		{"sql":"INSERT INTO nonexistent (x) VALUES (?)", "params":[1]}
+	]}`
+	rec := httptest.NewRecorder()
+	srv.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, "/api/databases/testdb/transaction",
+		bytes.NewBufferString(body)))
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("expected 400 on failure, got %d", rec.Code)
+	}
+
+	// Row 200 must not exist — transaction was rolled back.
+	rec2 := httptest.NewRecorder()
+	srv.ServeHTTP(rec2, httptest.NewRequest(http.MethodGet, "/api/databases/testdb/tables/items/rows/200", nil))
+	if rec2.Code != http.StatusNotFound {
+		t.Errorf("row 200 exists after rollback — transaction was not atomic")
+	}
+}
+
+func TestTransactionEmptyStatements(t *testing.T) {
+	srv, cleanup := newTestServer(t)
+	defer cleanup()
+	mustRegisterDB(t, srv, "testdb")
+
+	rec := httptest.NewRecorder()
+	srv.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, "/api/databases/testdb/transaction",
+		bytes.NewBufferString(`{"statements":[]}`)))
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("expected 400 for empty statements, got %d", rec.Code)
+	}
+}

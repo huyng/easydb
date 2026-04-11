@@ -321,6 +321,25 @@ func buildPaths() map[string]any {
 				}),
 			},
 		},
+		"/api/databases/{db}/transaction": map[string]any{
+			"post": map[string]any{
+				"summary":    "Execute statements in a transaction",
+				"tags":       []string{"Query"},
+				"parameters": []any{dbParam},
+				"requestBody": body(obj(map[string]any{
+					"statements": map[string]any{
+						"type": "array",
+						"items": obj(map[string]any{
+							"sql":    str,
+							"params": map[string]any{"type": "array", "items": map[string]any{}},
+						}),
+					},
+				})),
+				"responses": json200("Transaction result", obj(map[string]any{
+					"results": arr(obj(map[string]any{"rowcount": num, "lastrowid": num})),
+				})),
+			},
+		},
 		"/api/databases/{db}/backup": map[string]any{
 			"post": map[string]any{
 				"summary":    "Create a backup",
