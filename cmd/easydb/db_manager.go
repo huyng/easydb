@@ -11,6 +11,7 @@ import (
 	"regexp"
 	"sync"
 
+	"github.com/mattn/go-isatty"
 	_ "modernc.org/sqlite"
 )
 
@@ -72,8 +73,30 @@ func (m *DBManager) register(name, path string) error {
 	}
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	if _, ok := m.registry[name]; ok {
-		return &httpError{http.StatusConflict, "database already registered: " + name}
+	if old, ok := m.registry[name]; ok {
+		// In exploratory mode the --db file must always win over any stale
+		// registry entry with the same name.
+		if !m.exploratoryMode {
+			return &httpError{http.StatusConflict, "database already registered: " + name}
+		}
+		color := isatty.IsTerminal(os.Stderr.Fd())
+		co := func(code, s string) string {
+			if !color {
+				return s
+			}
+			return code + s + ansiReset
+		}
+		fmt.Fprintf(os.Stderr, "\n  %s  %s\n  %s  %s\n  %s  %s\n\n",
+			co(ansiYellow, "⚠  conflict"),
+			co(ansiBold, `"`+name+`" already registered — overriding path`),
+			co(ansiDim, pad("was", 9)), old,
+			co(ansiDim, pad("now", 9)), abs,
+		)
+		// Close any open connection to the old path before overwriting.
+		if db, ok := m.conns[name]; ok {
+			db.Close()
+			delete(m.conns, name)
+		}
 	}
 	m.registry[name] = abs
 	return m.saveRegistry()
