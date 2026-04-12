@@ -26,19 +26,36 @@ type DBInfo struct {
 
 // DBManager manages the registry of databases and their open connections.
 type DBManager struct {
-	dataDir  string
-	mu       sync.RWMutex
-	registry map[string]string // name → absolute path
-	conns    map[string]*sql.DB
+	dataDir         string
+	exploratoryMode bool
+	mu              sync.RWMutex
+	registry        map[string]string // name → absolute path
+	conns           map[string]*sql.DB
 }
 
-func newDBManager(dataDir string) (*DBManager, error) {
+func newDBManager(dataDir string, exploratoryMode bool) (*DBManager, error) {
 	m := &DBManager{
-		dataDir:  dataDir,
-		registry: make(map[string]string),
-		conns:    make(map[string]*sql.DB),
+		dataDir:         dataDir,
+		exploratoryMode: exploratoryMode,
+		registry:        make(map[string]string),
+		conns:           make(map[string]*sql.DB),
 	}
 	return m, m.loadRegistry()
+}
+
+// EnsureDataDir creates the data directory if it does not already exist.
+// Returns true if the directory was newly created.
+func (m *DBManager) EnsureDataDir() (bool, error) {
+	if _, err := os.Stat(m.dataDir); err == nil {
+		return false, nil
+	}
+	if err := os.MkdirAll(m.dataDir, 0755); err != nil {
+		return false, err
+	}
+	if err := m.saveRegistry(); err != nil {
+		return true, err
+	}
+	return true, nil
 }
 
 // register adds a database to the registry. path defaults to dataDir/name.db.
@@ -159,6 +176,14 @@ func (m *DBManager) loadRegistry() error {
 }
 
 func (m *DBManager) saveRegistry() error {
+	// In exploratory mode, skip writing the registry if the data dir doesn't
+	// exist yet — the initial DB is tracked in memory only until EnsureDataDir
+	// is called.
+	if m.exploratoryMode {
+		if _, err := os.Stat(m.dataDir); os.IsNotExist(err) {
+			return nil
+		}
+	}
 	data, err := json.MarshalIndent(m.registry, "", "  ")
 	if err != nil {
 		return err

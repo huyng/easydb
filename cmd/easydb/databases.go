@@ -40,11 +40,19 @@ func (s *Server) registerDatabase(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "name is required")
 		return
 	}
+	created, err := s.dbm.EnsureDataDir()
+	if handleErr(w, err) {
+		return
+	}
 	if err := s.dbm.register(body.Name, body.Path); handleErr(w, err) {
 		return
 	}
 	path, _ := s.dbm.getPath(body.Name)
-	writeJSON(w, http.StatusCreated, map[string]string{"name": body.Name, "path": path})
+	resp := map[string]any{"name": body.Name, "path": path}
+	if created {
+		resp["_dir_created"] = s.cfg.DataDir
+	}
+	writeJSON(w, http.StatusCreated, resp)
 }
 
 func (s *Server) uploadDatabase(w http.ResponseWriter, r *http.Request) {
@@ -65,6 +73,11 @@ func (s *Server) uploadDatabase(w http.ResponseWriter, r *http.Request) {
 	name := r.URL.Query().Get("name")
 	if name == "" {
 		writeError(w, http.StatusBadRequest, "name query param is required")
+		return
+	}
+
+	dirCreated, err := s.dbm.EnsureDataDir()
+	if handleErr(w, err) {
 		return
 	}
 
@@ -110,7 +123,11 @@ func (s *Server) uploadDatabase(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "file field is required")
 		return
 	}
-	writeJSON(w, http.StatusCreated, map[string]string{"name": name, "path": destPath})
+	resp := map[string]any{"name": name, "path": destPath}
+	if dirCreated {
+		resp["_dir_created"] = s.cfg.DataDir
+	}
+	writeJSON(w, http.StatusCreated, resp)
 }
 
 func (s *Server) importDatabase(w http.ResponseWriter, r *http.Request) {
@@ -131,18 +148,23 @@ func (s *Server) importDatabase(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	dirCreated, err := s.dbm.EnsureDataDir()
+	if handleErr(w, err) {
+		return
+	}
+
 	destPath := filepath.Join(s.cfg.DataDir, body.Name+".db")
 	if err := s.dbm.register(body.Name, destPath); handleErr(w, err) {
 		return
 	}
 
-	resp, err := http.Get(body.URL) //nolint:gosec — URL validated above
+	httpResp, err := http.Get(body.URL) //nolint:gosec — URL validated above
 	if err != nil {
 		s.dbm.unregister(body.Name, false)
 		writeError(w, http.StatusBadGateway, "fetch URL: "+err.Error())
 		return
 	}
-	defer resp.Body.Close()
+	defer httpResp.Body.Close()
 
 	out, err := os.Create(destPath)
 	if err != nil {
@@ -152,13 +174,17 @@ func (s *Server) importDatabase(w http.ResponseWriter, r *http.Request) {
 	}
 	defer out.Close()
 
-	limited := io.LimitReader(resp.Body, 500<<20)
+	limited := io.LimitReader(httpResp.Body, 500<<20)
 	if _, err := io.Copy(out, limited); err != nil {
 		s.dbm.unregister(body.Name, true)
 		writeError(w, http.StatusInternalServerError, "download: "+err.Error())
 		return
 	}
-	writeJSON(w, http.StatusCreated, map[string]string{"name": body.Name, "path": destPath})
+	result := map[string]any{"name": body.Name, "path": destPath}
+	if dirCreated {
+		result["_dir_created"] = s.cfg.DataDir
+	}
+	writeJSON(w, http.StatusCreated, result)
 }
 
 func (s *Server) unregisterDatabase(w http.ResponseWriter, r *http.Request) {

@@ -17,7 +17,7 @@ func newTestServer(t *testing.T) (*Server, func()) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	dbm, err := newDBManager(dir)
+	dbm, err := newDBManager(dir, false)
 	if err != nil {
 		os.RemoveAll(dir)
 		t.Fatal(err)

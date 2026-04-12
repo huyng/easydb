@@ -131,7 +131,7 @@ func (s *Server) corsMiddleware(next http.Handler) http.Handler {
 func (s *Server) health(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]any{
 		"status":   "ok",
-		"dev_mode": len(s.cfg.APIKeys) == 0,
+		"open_access_mode": len(s.cfg.APIKeys) == 0,
 	})
 }
 

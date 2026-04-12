@@ -45,13 +45,13 @@ type LocalStorage struct {
 }
 
 func newLocalStorage(dir string) (*LocalStorage, error) {
-	if err := os.MkdirAll(dir, 0755); err != nil {
-		return nil, fmt.Errorf("create backup dir: %w", err)
-	}
 	return &LocalStorage{dir: dir}, nil
 }
 
 func (s *LocalStorage) Put(filename, src string) (int64, error) {
+	if err := os.MkdirAll(s.dir, 0755); err != nil {
+		return 0, fmt.Errorf("create backup dir: %w", err)
+	}
 	dst := filepath.Join(s.dir, filename)
 	n, err := copyFile(src, dst)
 	return n, err

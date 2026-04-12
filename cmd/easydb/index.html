@@ -1393,11 +1393,12 @@ function App() {
   });
   const [apiKey,    setApiKey]    = useState(sessionStorage.getItem('edb_key') || '');
   const [serverUrl, setServerUrl] = useState(sessionStorage.getItem('edb_url') || window.location.origin);
-  const [showAuth,  setShowAuth]  = useState(!sessionStorage.getItem('edb_key'));
+  const [showAuth,  setShowAuth]  = useState(false);
 
   const [databases,   setDatabases]   = useState([]);
   const [expandedDbs, setExpandedDbs] = useState(new Set());
   const [showAddDb,   setShowAddDb]   = useState(false);
+  const [notice,      setNotice]      = useState(null);
 
   const [selectedDb,    setSelectedDb]    = useState(null);
   const [selectedTable, setSelectedTable] = useState(null);
@@ -1416,7 +1417,7 @@ function App() {
   const [backupRefresh, setBackupRefresh] = useState(0);
   const insecure = isInsecure();
   const [showInsecure, setShowInsecure] = useState(insecure && !sessionStorage.getItem(INSECURE_ACK));
-  const [devMode, setDevMode] = useState(false);
+  const [openAccessMode, setOpenAccessMode] = useState(false);
   const [showDevMode, setShowDevMode] = useState(false);
 
   // ── Helpers ──────────────────────────────
@@ -1467,33 +1468,41 @@ function App() {
   }, []);
 
   useEffect(() => {
-    // Check if server is in dev mode (no API keys)
-    fetch((serverUrl || window.location.origin) + '/health')
-      .then(r => r.json())
-      .then(d => {
-        if (d.dev_mode) {
-          setDevMode(true);
+    (async () => {
+      // 1. Check if server is in open-access mode (no API keys required)
+      let isOpenAccess = false;
+      try {
+        const r = await fetch((serverUrl || window.location.origin) + '/health');
+        const d = await r.json();
+        if (d.open_access_mode) {
+          isOpenAccess = true;
+          setOpenAccessMode(true);
           if (!sessionStorage.getItem(DEV_ACK)) setShowDevMode(true);
         }
-      })
-      .catch(() => {});
+      } catch (_) {}
 
-    if (apiKey) {
-      setAuth(apiKey, serverUrl);
-      (async () => {
-        await loadDatabases();
-        const { db, table, tab: t } = parseHash();
-        if (!db) return;
-        setTab(t);
-        setSelectedDb(db);
-        setExpandedDbs(new Set([db]));
-        await loadTables(db);
-        if (!table) return;
-        setSelectedTable(table);
-        const data = await apiFetch(`/api/databases/${db}/tables/${table}/schema`);
-        setSchema(data._err ? [] : data.columns);
-      })();
-    }
+      // 2. If auth is required and no stored key → show modal and stop
+      if (!isOpenAccess && !apiKey) {
+        setShowAuth(true);
+        return;
+      }
+
+      // 3. Auto-connect: empty key in open-access mode, stored key otherwise
+      setAuth(isOpenAccess ? '' : apiKey, serverUrl);
+      await loadDatabases();
+
+      // 4. Restore deep-link state from URL hash
+      const { db, table, tab: t } = parseHash();
+      if (!db) return;
+      setTab(t);
+      setSelectedDb(db);
+      setExpandedDbs(new Set([db]));
+      await loadTables(db);
+      if (!table) return;
+      setSelectedTable(table);
+      const data = await apiFetch(`/api/databases/${db}/tables/${table}/schema`);
+      setSchema(data._err ? [] : data.columns);
+    })();
   }, []);
 
   useEffect(() => {
@@ -1580,6 +1589,7 @@ function App() {
       method: 'POST', body: { name, path: path || undefined },
     });
     if (res._err) return res._err;
+    if (res._dir_created) setNotice(`Data directory created at ${res._dir_created}`);
     setShowAddDb(false);
     await loadDatabases();
     setExpandedDbs(prev => new Set([...prev, name]));
@@ -1598,6 +1608,7 @@ function App() {
       });
       const data = await res.json();
       if (!res.ok) return data.detail || JSON.stringify(data);
+      if (data._dir_created) setNotice(`Data directory created at ${data._dir_created}`);
       setShowAddDb(false);
       await loadDatabases();
       setExpandedDbs(prev => new Set([...prev, name]));
@@ -1613,6 +1624,7 @@ function App() {
       method: 'POST', body: { name, url },
     });
     if (res._err) return res._err;
+    if (res._dir_created) setNotice(`Data directory created at ${res._dir_created}`);
     setShowAddDb(false);
     await loadDatabases();
     setExpandedDbs(prev => new Set([...prev, name]));
@@ -1689,7 +1701,7 @@ function App() {
             &#9888;&#65039; HTTP
           </div>
         )}
-        {devMode && (
+        {openAccessMode && (
           <div className="flex items-center gap-1 px-2.5 py-[3px] rounded-md bg-[#ff98001a] border border-[#ff980044] text-[#ffb74d] text-[11px] font-semibold shrink-0 cursor-default" title="No API KEY configured — anyone can access this server">
           Open-Access Mode
           </div>
@@ -1718,6 +1730,12 @@ function App() {
         />
 
         <div className="flex-1 flex flex-col overflow-hidden">
+          {notice && (
+            <div className="mx-4 mt-3 px-4 py-2.5 rounded-lg bg-accent/10 border border-accent/30 text-accent text-[13px] flex items-center justify-between shrink-0">
+              <span>&#128193; {notice}</span>
+              <button className="ml-3 text-accent/60 hover:text-accent leading-none cursor-pointer bg-transparent border-0 p-0 text-base" onClick={() => setNotice(null)}>&#x2715;</button>
+            </div>
+          )}
           <div className="flex border-b border-edge bg-surface shrink-0 px-4">
             <div className={`flex items-center gap-1.5 px-3.5 py-[11px] text-[13px] font-medium cursor-pointer border-b-2 -mb-px ${tab === 'browse' ? 'text-accent border-accent' : 'text-muted border-transparent hover:text-fg'}`} onClick={() => switchTab('browse')}>
               <svg width="13" height="13" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">

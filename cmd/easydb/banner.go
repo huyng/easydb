@@ -60,16 +60,22 @@ func printBanner(cfg *Config, dbm *DBManager) {
 		lines = append(lines, row("auth", fmt.Sprintf("%d API key(s) configured", len(cfg.APIKeys))))
 	}
 
-	lines = append(lines, row("data", cfg.DataDir))
-
-	if cfg.BackupS3Bucket != "" {
-		lines = append(lines, row("backups", fmt.Sprintf("s3://%s/%s  (max %d per db)", cfg.BackupS3Bucket, strings.TrimSuffix(cfg.BackupS3Prefix, "/"), cfg.BackupMax)))
+	if cfg.ExploratoryMode {
+		lines = append(lines, row("mode", c(ansiCyan, "exploratory — data dir created on demand")))
 	} else {
-		lines = append(lines, row("backups", fmt.Sprintf("local › %s  (max %d per db)", cfg.BackupDir, cfg.BackupMax)))
+		lines = append(lines, row("data", cfg.DataDir))
 	}
 
-	if cfg.BackupSchedule != "" {
-		lines = append(lines, row("schedule", "every "+cfg.BackupSchedule))
+	if !cfg.ExploratoryMode {
+		if cfg.BackupS3Bucket != "" {
+			lines = append(lines, row("backups", fmt.Sprintf("s3://%s/%s  (max %d per db)", cfg.BackupS3Bucket, strings.TrimSuffix(cfg.BackupS3Prefix, "/"), cfg.BackupMax)))
+		} else {
+			lines = append(lines, row("backups", fmt.Sprintf("local › %s  (max %d per db)", cfg.BackupDir, cfg.BackupMax)))
+		}
+
+		if cfg.BackupSchedule != "" {
+			lines = append(lines, row("schedule", "every "+cfg.BackupSchedule))
+		}
 	}
 
 	lines = append(lines, "")

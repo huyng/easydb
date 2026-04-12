@@ -35,13 +35,16 @@ func main() {
 	if *dbPath != "" {
 		cfg.InitialDB = *dbPath
 	}
+	cfg.ExploratoryMode = cfg.InitialDB != ""
 
-	if err := os.MkdirAll(cfg.DataDir, 0755); err != nil {
-		slog.Error("create data dir", "err", err)
-		os.Exit(1)
+	if !cfg.ExploratoryMode {
+		if err := os.MkdirAll(cfg.DataDir, 0755); err != nil {
+			slog.Error("create data dir", "err", err)
+			os.Exit(1)
+		}
 	}
 
-	dbm, err := newDBManager(cfg.DataDir)
+	dbm, err := newDBManager(cfg.DataDir, cfg.ExploratoryMode)
 	if err != nil {
 		slog.Error("init db manager", "err", err)
 		os.Exit(1)

@@ -18,6 +18,7 @@ type Config struct {
 	BackupMax       int
 	BackupSchedule  string
 	InitialDB       string
+	ExploratoryMode bool   // true when --db is set; skips data dir creation until needed
 	BackupS3Bucket   string // EASYDB_S3_BUCKET — enables S3 backend when non-empty
 	BackupS3Prefix   string // EASYDB_S3_PREFIX  (default: "easydb-backups/")
 	BackupS3Region   string // EASYDB_S3_REGION
